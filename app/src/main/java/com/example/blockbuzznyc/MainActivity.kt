@@ -18,14 +18,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import androidx.core.content.ContextCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.TextField
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,7 +34,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             BlockBuzzNYCTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
-//                    Greeting("Android")
                     GoogleMapComposable()
                 }
             }
@@ -43,6 +43,10 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun GoogleMapComposable() {
+    var showDialog by remember { mutableStateOf(false) }
+    var pinTitle by remember { mutableStateOf("") }
+    var selectedLatLng by remember { mutableStateOf<LatLng?>(null) }
+
     var mapView by remember { mutableStateOf<MapView?>(null) }
     val fineLocationPermission = Manifest.permission.ACCESS_FINE_LOCATION
     val hasFineLocationPermission = ContextCompat.checkSelfPermission(
@@ -54,7 +58,9 @@ fun GoogleMapComposable() {
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
+            // Permission granted
         } else {
+            // Permission denied
         }
     }
 
@@ -66,20 +72,15 @@ fun GoogleMapComposable() {
             MapView(context).also {
                 it.onCreate(null)
                 it.getMapAsync { googleMap ->
-                    println("Map is ready")
-
-                    // Configure the map's camera position and zoom level
                     val initialLatLng = LatLng(40.7128, -74.0060) // New York City coordinates
-                    val zoomLevel = 12f
+                    val zoomLevel = 17f
                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(initialLatLng, zoomLevel))
 
-                    // Add a marker to the map
-                    val markerOptions = MarkerOptions()
-                        .position(initialLatLng)
-                        .title("New York City")
-                    googleMap.addMarker(markerOptions)
+                    googleMap.setOnMapLongClickListener { latLng ->
+                        selectedLatLng = latLng
+                        showDialog = true
+                    }
                 }
-
 
                 mapView = it
             }
@@ -89,23 +90,54 @@ fun GoogleMapComposable() {
         }
     )
 
-//    DisposableEffect(key1 = mapView) {
-//        onDispose {
-//            mapView?.onDestroy()
-//        }
-//    }
-}
-
-
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello, $name!")
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDialog = false
+            },
+            title = {
+                Text(text = "Add a title")
+            },
+            text = {
+                TextField(
+                    value = pinTitle,
+                    onValueChange = { pinTitle = it }
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDialog = false
+                        mapView?.getMapAsync { googleMap ->
+                            selectedLatLng?.let { latLng ->
+                                val markerOptions = MarkerOptions()
+                                    .position(latLng)
+                                    .title(pinTitle)
+                                googleMap.addMarker(markerOptions)
+                            }
+                        }
+                    }
+                ) {
+                    Text(text = "Add")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        showDialog = false
+                    }
+                ) {
+                    Text(text = "Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     BlockBuzzNYCTheme {
-//        Greeting("Android")
+        // Greeting("Android")
     }
 }
