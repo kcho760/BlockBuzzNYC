@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -24,9 +25,17 @@ import com.google.android.gms.maps.model.MarkerOptions
 import androidx.core.content.ContextCompat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextField
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,26 +55,32 @@ fun GoogleMapComposable() {
     var showDialog by remember { mutableStateOf(false) }
     var pinTitle by remember { mutableStateOf("") }
     var selectedLatLng by remember { mutableStateOf<LatLng?>(null) }
-
     var mapView by remember { mutableStateOf<MapView?>(null) }
+
+    // State to track permission status
+    var hasFineLocationPermission by remember { mutableStateOf(false) }
+
     val fineLocationPermission = Manifest.permission.ACCESS_FINE_LOCATION
-    val hasFineLocationPermission = ContextCompat.checkSelfPermission(
-        LocalContext.current,
-        fineLocationPermission
-    ) == PackageManager.PERMISSION_GRANTED
+    val context = LocalContext.current
+
+    // Check and update permission status
+    LaunchedEffect(Unit) {
+        hasFineLocationPermission = ContextCompat.checkSelfPermission(
+            context,
+            fineLocationPermission
+        ) == PackageManager.PERMISSION_GRANTED
+    }
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) {
-            // Permission granted
-        } else {
-            // Permission denied
-        }
+        hasFineLocationPermission = isGranted
     }
 
+    // Request permission if not granted
     if (!hasFineLocationPermission) {
-        requestPermissionLauncher.launch(fineLocationPermission)
+        PermissionRequestUI(requestPermissionLauncher, fineLocationPermission)
+        return
     }
     AndroidView(
         factory = { context ->
@@ -133,6 +148,47 @@ fun GoogleMapComposable() {
         )
     }
 }
+
+@Composable
+fun PermissionRequestUI(
+    requestPermissionLauncher: ManagedActivityResultLauncher<String, Boolean>,
+    permission: String
+) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Location Permission Needed",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = "This app requires location permission to function properly.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)
+            )
+            Button(
+                onClick = { requestPermissionLauncher.launch(permission) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text("Grant Permission")
+            }
+        }
+    }
+}
+
 
 @Preview(showBackground = true)
 @Composable
