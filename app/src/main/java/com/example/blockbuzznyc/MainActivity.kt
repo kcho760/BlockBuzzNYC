@@ -36,6 +36,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextField
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
+import com.google.android.gms.location.LocationServices
+import android.util.Log
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,27 +79,38 @@ fun GoogleMapComposable() {
         hasFineLocationPermission = isGranted
     }
 
-    // Request permission if not granted
+    LaunchedEffect(hasFineLocationPermission) {
+        if (!hasFineLocationPermission) {
+            requestPermissionLauncher.launch(fineLocationPermission)
+        }
+    }
+
     if (!hasFineLocationPermission) {
         PermissionRequestUI(requestPermissionLauncher, fineLocationPermission)
         return
     }
     AndroidView(
         factory = { context ->
-            MapView(context).also {
-                it.onCreate(null)
-                it.getMapAsync { googleMap ->
-                    val initialLatLng = LatLng(40.7128, -74.0060) // New York City coordinates
-                    val zoomLevel = 17f
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(initialLatLng, zoomLevel))
+            MapView(context).also { mapView ->
+                mapView.onCreate(null)
+                mapView.getMapAsync { googleMap ->
+                    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+                    fusedLocationClient.lastLocation
+                        .addOnSuccessListener { location ->
+                            location?.let {
+                                val currentLatLng = LatLng(it.latitude, it.longitude)
+                                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
+                            } ?: run {
+                                val defaultLatLng = LatLng(40.7128, -74.0060) // New York City coordinates
+                                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 17f))
+                            }
+                        }
 
                     googleMap.setOnMapLongClickListener { latLng ->
                         selectedLatLng = latLng
                         showDialog = true
                     }
                 }
-
-                mapView = it
             }
         },
         update = { mapView ->
@@ -122,15 +135,18 @@ fun GoogleMapComposable() {
             confirmButton = {
                 Button(
                     onClick = {
+                        Log.d("MapView", "Add Button Clicked") // Logging button click
                         showDialog = false
                         mapView?.getMapAsync { googleMap ->
                             selectedLatLng?.let { latLng ->
+                                Log.d("MapView", "Selected LatLng: $latLng") // Logging the selected coordinates
                                 val markerOptions = MarkerOptions()
                                     .position(latLng)
                                     .title(pinTitle)
                                 googleMap.addMarker(markerOptions)
-                            }
-                        }
+                                Log.d("MapView", "Marker added with title: $pinTitle") // Logging marker addition
+                            } ?: Log.d("MapView", "Selected LatLng is null") // Logging if LatLng is null
+                        } ?: Log.d("MapView", "MapView is null") // Logging if MapView is null
                     }
                 ) {
                     Text(text = "Add")
