@@ -56,8 +56,8 @@ class MainActivity : ComponentActivity() {
 fun GoogleMapComposable() {
     var showDialog by remember { mutableStateOf(false) }
     var pinTitle by remember { mutableStateOf("") }
-    var selectedLatLng by remember { mutableStateOf<LatLng?>(null) }
-    var mapView by remember { mutableStateOf<MapView?>(null) }
+    var selectedLatLng: LatLng? by remember { mutableStateOf(null) }
+    var mapViewInstance: MapView? by remember { mutableStateOf(null) }
 
     // State to track permission status
     var hasFineLocationPermission by remember { mutableStateOf(false) }
@@ -92,13 +92,16 @@ fun GoogleMapComposable() {
     AndroidView(
         factory = { context ->
             MapView(context).also { mapView ->
+                mapViewInstance = mapView // Capture the MapView instance
                 mapView.onCreate(null)
+                Log.d("MapView", "MapView created, $mapViewInstance")
                 mapView.getMapAsync { googleMap ->
                     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
                     fusedLocationClient.lastLocation
                         .addOnSuccessListener { location ->
                             location?.let {
                                 val currentLatLng = LatLng(it.latitude, it.longitude)
+                                Log.d("MapView", "Current LatLng: $currentLatLng") // Logging current coordinates
                                 googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
                             } ?: run {
                                 val defaultLatLng = LatLng(40.7128, -74.0060) // New York City coordinates
@@ -106,7 +109,7 @@ fun GoogleMapComposable() {
                             }
                         }
 
-                    googleMap.setOnMapLongClickListener { latLng ->
+                    googleMap.setOnMapLongClickListener { latLng -> // What happens when the map is long clicked
                         selectedLatLng = latLng
                         showDialog = true
                     }
@@ -114,7 +117,8 @@ fun GoogleMapComposable() {
             }
         },
         update = { mapView ->
-            mapView?.onResume()
+            Log.d("MapView", "MapView update called, mapView is ${"not "}null")
+            mapView.onResume()
         }
     )
 
@@ -122,6 +126,7 @@ fun GoogleMapComposable() {
         AlertDialog(
             onDismissRequest = {
                 showDialog = false
+                Log.d("MapView", "Dialog dismissed")
             },
             title = {
                 Text(text = "Add a title")
@@ -135,18 +140,25 @@ fun GoogleMapComposable() {
             confirmButton = {
                 Button(
                     onClick = {
-                        Log.d("MapView", "Add Button Clicked") // Logging button click
                         showDialog = false
-                        mapView?.getMapAsync { googleMap ->
-                            selectedLatLng?.let { latLng ->
-                                Log.d("MapView", "Selected LatLng: $latLng") // Logging the selected coordinates
-                                val markerOptions = MarkerOptions()
-                                    .position(latLng)
-                                    .title(pinTitle)
-                                googleMap.addMarker(markerOptions)
-                                Log.d("MapView", "Marker added with title: $pinTitle") // Logging marker addition
-                            } ?: Log.d("MapView", "Selected LatLng is null") // Logging if LatLng is null
-                        } ?: Log.d("MapView", "MapView is null") // Logging if MapView is null
+                        mapViewInstance?.getMapAsync { googleMap ->
+                            Log.d("MapView", "mapViewInstance is $mapViewInstance")
+                            selectedLatLng.let { latLng ->
+                                Log.d("MapView", "selectedLatLng is $latLng")
+                                val markerOptions = latLng?.let {
+                                    MarkerOptions()
+                                        .position(it)
+                                        .title(pinTitle)
+                                }
+                                if (markerOptions != null) {
+                                    googleMap.addMarker(markerOptions)
+                                }
+                                Log.d("MapView", "Marker added at $latLng")
+                            } ?: run {
+                                Log.d("MapView", "selectedLatLng is null")
+                            }
+                        }
+                        Log.d("MapView", "Add button pressed")
                     }
                 ) {
                     Text(text = "Add")
