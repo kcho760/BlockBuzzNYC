@@ -1,3 +1,5 @@
+@file:Suppress("NAME_SHADOWING")
+
 package com.example.blockbuzznyc
 
 import android.Manifest
@@ -18,7 +20,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
@@ -27,8 +28,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -38,22 +37,41 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.location.LocationServices
 import android.util.Log
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
         setContent {
             BlockBuzzNYCTheme {
-                Surface(color = MaterialTheme.colorScheme.background) {
-                    GoogleMapComposable()
+                val isLoggedIn = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
+
+                if (isLoggedIn.value) {
+                    // Show main app screen
+                    GoogleMapComposable(onLogout = { isLoggedIn.value = false })
+                } else {
+                    // Show login screen
+                    LoginScreen(onLoginSuccessful = {
+                        isLoggedIn.value = true
+                    })
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GoogleMapComposable() {
+fun GoogleMapComposable(onLogout: () -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
     var pinTitle by remember { mutableStateOf("") }
     var selectedLatLng: LatLng? by remember { mutableStateOf(null) }
@@ -89,38 +107,56 @@ fun GoogleMapComposable() {
         PermissionRequestUI(requestPermissionLauncher, fineLocationPermission)
         return
     }
-    AndroidView(
-        factory = { context ->
-            MapView(context).also { mapView ->
-                mapViewInstance = mapView // Capture the MapView instance
-                mapView.onCreate(null)
-                Log.d("MapView", "MapView created, $mapViewInstance")
-                mapView.getMapAsync { googleMap ->
-                    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-                    fusedLocationClient.lastLocation
-                        .addOnSuccessListener { location ->
-                            location?.let {
-                                val currentLatLng = LatLng(it.latitude, it.longitude)
-                                Log.d("MapView", "Current LatLng: $currentLatLng") // Logging current coordinates
-                                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
-                            } ?: run {
-                                val defaultLatLng = LatLng(40.7128, -74.0060) // New York City coordinates
-                                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 17f))
-                            }
-                        }
-
-                    googleMap.setOnMapLongClickListener { latLng -> // What happens when the map is long clicked
-                        selectedLatLng = latLng
-                        showDialog = true
+    fun logoutUser(onLogout: () -> Unit) {
+        FirebaseAuth.getInstance().signOut()
+        onLogout()
+    }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("BlockBuzzNYC") },
+                actions = {
+                    IconButton(onClick = { logoutUser(onLogout) }) {
+                        Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
                     }
                 }
-            }
-        },
-        update = { mapView ->
-            Log.d("MapView", "MapView update called, mapView is ${"not "}null")
-            mapView.onResume()
+            )
         }
-    )
+    ) { paddingValues ->
+        Column(modifier = Modifier.padding(paddingValues)) {
+            AndroidView(
+                factory = { context ->
+                    MapView(context).also { mapView ->
+                        mapViewInstance = mapView // Capture the MapView instance
+                        mapView.onCreate(null)
+                        Log.d("MapView", "MapView created, $mapViewInstance")
+                        mapView.getMapAsync { googleMap ->
+                            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+                            fusedLocationClient.lastLocation
+                                .addOnSuccessListener { location ->
+                                    location?.let {
+                                        val currentLatLng = LatLng(it.latitude, it.longitude)
+                                        Log.d("MapView", "Current LatLng: $currentLatLng") // Logging current coordinates
+                                        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
+                                    } ?: run {
+                                        val defaultLatLng = LatLng(40.7128, -74.0060) // New York City coordinates
+                                        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 17f))
+                                    }
+                                }
+
+                            googleMap.setOnMapLongClickListener { latLng -> // What happens when the map is long clicked
+                                selectedLatLng = latLng
+                                showDialog = true
+                            }
+                        }
+                    }
+                },
+                update = { mapView ->
+                    Log.d("MapView", "MapView update called, mapView is ${"not "}null")
+                    mapView.onResume()
+                }
+            )}
+    }
 
     if (showDialog) {
         AlertDialog(
@@ -154,8 +190,6 @@ fun GoogleMapComposable() {
                                     googleMap.addMarker(markerOptions)
                                 }
                                 Log.d("MapView", "Marker added at $latLng")
-                            } ?: run {
-                                Log.d("MapView", "selectedLatLng is null")
                             }
                         }
                     }
@@ -175,6 +209,7 @@ fun GoogleMapComposable() {
         )
     }
 }
+
 
 @Composable
 fun PermissionRequestUI(
