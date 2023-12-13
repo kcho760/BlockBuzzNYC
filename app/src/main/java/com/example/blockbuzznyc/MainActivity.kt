@@ -94,14 +94,12 @@ fun GoogleMapComposable() {
             MapView(context).also { mapView ->
                 mapViewInstance = mapView // Capture the MapView instance
                 mapView.onCreate(null)
-                Log.d("MapView", "MapView created, $mapViewInstance")
                 mapView.getMapAsync { googleMap ->
                     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
                     fusedLocationClient.lastLocation
                         .addOnSuccessListener { location ->
                             location?.let {
                                 val currentLatLng = LatLng(it.latitude, it.longitude)
-                                Log.d("MapView", "Current LatLng: $currentLatLng") // Logging current coordinates
                                 googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
                             } ?: run {
                                 val defaultLatLng = LatLng(40.7128, -74.0060) // New York City coordinates
@@ -117,7 +115,6 @@ fun GoogleMapComposable() {
             }
         },
         update = { mapView ->
-            Log.d("MapView", "MapView update called, mapView is ${"not "}null")
             mapView.onResume()
         }
     )
@@ -126,7 +123,6 @@ fun GoogleMapComposable() {
         AlertDialog(
             onDismissRequest = {
                 showDialog = false
-                Log.d("MapView", "Dialog dismissed")
             },
             title = {
                 Text(text = "Add a title")
@@ -141,24 +137,17 @@ fun GoogleMapComposable() {
                 Button(
                     onClick = {
                         showDialog = false
-                        mapViewInstance?.getMapAsync { googleMap ->
-                            Log.d("MapView", "mapViewInstance is $mapViewInstance")
+                        mapViewInstance?.getMapAsync {
                             selectedLatLng.let { latLng ->
-                                Log.d("MapView", "selectedLatLng is $latLng")
                                 val markerOptions = latLng?.let {
                                     MarkerOptions()
                                         .position(it)
                                         .title(pinTitle)
                                 }
                                 if (markerOptions != null) {
-                                    googleMap.addMarker(markerOptions)
                                 }
-                                Log.d("MapView", "Marker added at $latLng")
-                            } ?: run {
-                                Log.d("MapView", "selectedLatLng is null")
                             }
                         }
-                        Log.d("MapView", "Add button pressed")
                     }
                 ) {
                     Text(text = "Add")
