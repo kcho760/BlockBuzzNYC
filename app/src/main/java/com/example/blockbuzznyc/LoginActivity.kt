@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.blockbuzznyc.ui.theme.DarkCharcoal
@@ -40,7 +42,7 @@ fun LoginScreen(onLoginSuccessful: () -> Unit) {
     if (FirebaseAuth.getInstance().currentUser != null) {
         onLoginSuccessful()
     }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -85,7 +87,11 @@ fun LoginScreen(onLoginSuccessful: () -> Unit) {
                     Text("Login")
                 }
                 Button(onClick = { /* Navigate to sign up screen */ }) {
-                    Text("Sign Up")
+                    Text(
+                        "Don't have an account?\nSign up!",
+                        textAlign = TextAlign.Center,
+                    )
+
                 }
             }
         }

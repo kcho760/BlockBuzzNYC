@@ -44,6 +44,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 
@@ -53,18 +56,39 @@ class MainActivity : ComponentActivity() {
         FirebaseApp.initializeApp(this)
         setContent {
             BlockBuzzNYCTheme {
-                val isLoggedIn = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
+                AppNavigation()
+            }
+        }
+    }
+}
 
-                if (isLoggedIn.value) {
-                    // Show main app screen
-                    GoogleMapComposable(onLogout = { isLoggedIn.value = false })
-                } else {
-                    // Show login screen
-                    LoginScreen(onLoginSuccessful = {
-                        isLoggedIn.value = true
-                    })
+@Composable
+fun AppNavigation() {
+    val navController = rememberNavController()
+    val isLoggedIn = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
+
+    LaunchedEffect(isLoggedIn.value) {
+        if (isLoggedIn.value) {
+            navController.navigate("main") {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
                 }
             }
+        } else {
+            navController.navigate("login") {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
+            }
+        }
+    }
+
+    NavHost(navController = navController, startDestination = if (isLoggedIn.value) "main" else "login") {
+        composable("login") {
+            LoginScreen(onLoginSuccessful = { isLoggedIn.value = true })
+        }
+        composable("main") {
+            GoogleMapComposable(onLogout = { isLoggedIn.value = false })
         }
     }
 }
