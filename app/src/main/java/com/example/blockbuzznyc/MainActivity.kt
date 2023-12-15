@@ -1,10 +1,9 @@
-@file:Suppress("NAME_SHADOWING")
+//@file:Suppress("NAME_SHADOWING")
 
 package com.example.blockbuzznyc
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.content.res.Resources
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -51,8 +50,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.blockbuzznyc.model.MapPin
+import com.google.android.gms.maps.GoogleMap
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.firestore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -145,6 +148,18 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
         FirebaseAuth.getInstance().signOut()
         onLogout()
     }
+    fun savePinToFirestore(mapPin: MapPin) {
+        val db = Firebase.firestore
+        db.collection("pins")
+            .add(mapPin)
+            .addOnSuccessListener { documentReference ->
+                Log.d("Firestore", "DocumentSnapshot added with ID: ${documentReference.id}")
+            }
+            .addOnFailureListener { e ->
+                Log.w("Firestore", "Error adding document", e)
+            }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -165,23 +180,21 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
             AndroidView(
                 factory = { context ->
                     MapView(context).also { mapView ->
-                        mapViewInstance = mapView // Capture the MapView instance
+                        mapViewInstance = mapView
                         mapView.onCreate(null)
-                        Log.d("MapView", "MapView created, $mapViewInstance")
                         mapView.getMapAsync { googleMap ->
                             val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
                             fusedLocationClient.lastLocation
                                 .addOnSuccessListener { location ->
                                     location?.let {
                                         val currentLatLng = LatLng(it.latitude, it.longitude)
-                                        Log.d("MapView", "Current LatLng: $currentLatLng") // Logging current coordinates
                                         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
                                     } ?: run {
                                         val defaultLatLng = LatLng(40.7128, -74.0060) // New York City coordinates
                                         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 17f))
                                     }
                                 }
-
+                            fetchAndDisplayPins(googleMap)
                             googleMap.setOnMapLongClickListener { latLng -> // What happens when the map is long clicked
                                 selectedLatLng = latLng
                                 showDialog = true
@@ -190,7 +203,6 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
                     }
                 },
                 update = { mapView ->
-                    Log.d("MapView", "MapView update called, mapView is ${"not "}null")
                     mapView.onResume()
                 }
             )}
@@ -200,10 +212,12 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
         AlertDialog(
             onDismissRequest = {
                 showDialog = false
-                Log.d("MapView", "Dialog dismissed")
             },
             title = {
-                Text(text = "Add a title")
+                Text(
+                    text = "Add a title",
+                    color = Color.Black
+                )
             },
             text = {
                 TextField(
@@ -214,25 +228,31 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
             confirmButton = {
                 Button(
                     onClick = {
+                        // Logic to dismiss the dialog and save the pin information
                         showDialog = false
-                        mapViewInstance?.getMapAsync { googleMap ->
-                            Log.d("MapView", "mapViewInstance is $mapViewInstance")
-                            selectedLatLng.let { latLng ->
-                                Log.d("MapView", "selectedLatLng is $latLng")
-                                val markerOptions = latLng?.let {
+                        selectedLatLng?.let { latLng ->
+                            val mapPin = MapPin(
+                                title = pinTitle,
+                                latitude = latLng.latitude,
+                                longitude = latLng.longitude
+                            )
+                            // This function would handle the Firebase Firestore save operation
+                            savePinToFirestore(mapPin)
+                            // You might also want to add the marker to the map view here
+                            mapViewInstance?.getMapAsync { googleMap ->
+                                googleMap.addMarker(
                                     MarkerOptions()
-                                        .position(it)
+                                        .position(latLng)
                                         .title(pinTitle)
-                                }
-                                if (markerOptions != null) {
-                                    googleMap.addMarker(markerOptions)
-                                }
-                                Log.d("MapView", "Marker added at $latLng")
+                                )
                             }
                         }
-                    }
+                    },
                 ) {
-                    Text(text = "Add")
+                    Text(
+                        text = "Confirm",
+                        color = MaterialTheme.colorScheme.onSecondary
+                    )
                 }
             },
             dismissButton = {
@@ -287,6 +307,22 @@ fun PermissionRequestUI(
             }
         }
     }
+}
+
+fun fetchAndDisplayPins(googleMap: GoogleMap) {
+    val db = Firebase.firestore
+    db.collection("pins")
+        .get()
+        .addOnSuccessListener { documents ->
+            for (document in documents) {
+                val mapPin = document.toObject(MapPin::class.java)
+                val location = LatLng(mapPin.latitude, mapPin.longitude)
+                googleMap.addMarker(MarkerOptions().position(location).title(mapPin.title))
+            }
+        }
+        .addOnFailureListener { exception ->
+            Log.w("Firestore", "Error getting documents: ", exception)
+        }
 }
 
 
