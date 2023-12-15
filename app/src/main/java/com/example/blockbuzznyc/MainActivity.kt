@@ -4,6 +4,7 @@ package com.example.blockbuzznyc
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -16,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.blockbuzznyc.ui.theme.BlockBuzzNYCTheme
+import com.example.blockbuzznyc.ui.theme.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -44,6 +46,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -81,14 +85,20 @@ fun AppNavigation() {
                 }
             }
         }
+
     }
 
     NavHost(navController = navController, startDestination = if (isLoggedIn.value) "main" else "login") {
         composable("login") {
-            LoginScreen(onLoginSuccessful = { isLoggedIn.value = true })
+            LoginScreen(navController, onLoginSuccessful = {
+                isLoggedIn.value = true
+            })
         }
         composable("main") {
             GoogleMapComposable(onLogout = { isLoggedIn.value = false })
+        }
+        composable("signup") {
+            SignUpScreen(onSignUpSuccessful = { isLoggedIn.value = true })
         }
     }
 }
@@ -139,6 +149,10 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text("BlockBuzzNYC") },
+                colors = TopAppBarDefaults.mediumTopAppBarColors(
+                    containerColor = SteelBlue, // Set the background color here
+                    titleContentColor = Color.White // Set the title text color here
+                ),
                 actions = {
                     IconButton(onClick = { logoutUser(onLogout) }) {
                         Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
