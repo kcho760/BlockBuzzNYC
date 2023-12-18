@@ -209,45 +209,59 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
     }
 
     if (showDialog) {
+        var pinDescription by remember { mutableStateOf("") } // State to hold the pin description
+
         AlertDialog(
             onDismissRequest = {
                 showDialog = false
             },
             title = {
                 Text(
-                    text = "Add a title",
+                    text = "Create a Pin",
                     color = Color.Black
                 )
             },
             text = {
-                TextField(
-                    value = pinTitle,
-                    onValueChange = { pinTitle = it }
-                )
+                Column {
+                    TextField(
+                        value = pinTitle,
+                        onValueChange = { pinTitle = it },
+                        label = { Text("Title") },
+                        singleLine = true
+                    )
+                    TextField(
+                        value = pinDescription,
+                        onValueChange = { pinDescription = it },
+                        label = { Text("Description") },
+                        singleLine = true // Set to false if you want multi-line input
+                    )
+                    // Include additional fields for photo selection, etc., if needed
+                }
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        // Logic to dismiss the dialog and save the pin information
                         showDialog = false
                         selectedLatLng?.let { latLng ->
                             val mapPin = MapPin(
                                 title = pinTitle,
+                                description = pinDescription,
                                 latitude = latLng.latitude,
                                 longitude = latLng.longitude
+                                // Include additional fields here as necessary
                             )
-                            // This function would handle the Firebase Firestore save operation
                             savePinToFirestore(mapPin)
-                            // You might also want to add the marker to the map view here
                             mapViewInstance?.getMapAsync { googleMap ->
                                 googleMap.addMarker(
                                     MarkerOptions()
                                         .position(latLng)
                                         .title(pinTitle)
+                                        // Optionally, you can set a snippet for the description
+                                        .snippet(pinDescription)
                                 )
                             }
                         }
-                    },
+                    }
                 ) {
                     Text(
                         text = "Confirm",
@@ -267,6 +281,7 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
         )
     }
 }
+
 
 
 @Composable
