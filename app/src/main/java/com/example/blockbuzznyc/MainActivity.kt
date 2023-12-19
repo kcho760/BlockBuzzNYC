@@ -115,33 +115,34 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
     var mapViewInstance: MapView? by remember { mutableStateOf(null) }
 
     // State to track permission status
-    var hasFineLocationPermission by remember { mutableStateOf(false) }
-
-    val fineLocationPermission = Manifest.permission.ACCESS_FINE_LOCATION
+    var hasPermissions by remember { mutableStateOf(false) }
+    val permissions = listOf(
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.CAMERA
+    )
     val context = LocalContext.current
 
     // Check and update permission status
     LaunchedEffect(Unit) {
-        hasFineLocationPermission = ContextCompat.checkSelfPermission(
-            context,
-            fineLocationPermission
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        hasFineLocationPermission = isGranted
-    }
-
-    LaunchedEffect(hasFineLocationPermission) {
-        if (!hasFineLocationPermission) {
-            requestPermissionLauncher.launch(fineLocationPermission)
+        hasPermissions = permissions.all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
         }
     }
 
-    if (!hasFineLocationPermission) {
-        PermissionRequestUI(requestPermissionLauncher, fineLocationPermission)
+    val requestMultiplePermissionsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissionsMap ->
+        hasPermissions = permissionsMap.values.all { it }
+    }
+
+    LaunchedEffect(hasPermissions) {
+        if (!hasPermissions) {
+            requestMultiplePermissionsLauncher.launch(permissions.toTypedArray())
+        }
+    }
+
+    if (!hasPermissions) {
+        PermissionRequestUI(requestMultiplePermissionsLauncher, permissions)
         return
     }
     fun logoutUser(onLogout: () -> Unit) {
@@ -286,9 +287,10 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
 
 @Composable
 fun PermissionRequestUI(
-    requestPermissionLauncher: ManagedActivityResultLauncher<String, Boolean>,
-    permission: String
+    requestPermissionLauncher: ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>>,
+    permission: List<String>
 ) {
+    // Display a message to the user explaining why these permissions are needed
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -301,28 +303,29 @@ fun PermissionRequestUI(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Location Permission Needed",
+                text = "Permissions Needed",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                text = "This app requires location permission to function properly.",
+                text = "This app requires access to your location and camera for full functionality.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)
             )
             Button(
-                onClick = { requestPermissionLauncher.launch(permission) },
+                onClick = { requestPermissionLauncher.launch(permission.toTypedArray()) },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Text("Grant Permission")
+                Text("Grant Permissions")
             }
         }
     }
 }
+
 
 fun fetchAndDisplayPins(googleMap: GoogleMap) {
     val db = Firebase.firestore
