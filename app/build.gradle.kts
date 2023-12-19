@@ -53,6 +53,7 @@ android {
 
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation ("io.coil-kt:coil-compose:2.1.0")
     implementation ("androidx.navigation:navigation-compose:2.7.6")
     implementation ("com.google.android.material:material:1.10.0")
     implementation("com.google.firebase:firebase-analytics")

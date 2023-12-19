@@ -4,6 +4,8 @@ package com.example.blockbuzznyc
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.media.Image
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -38,6 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.location.LocationServices
 import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,30 +51,35 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
 import com.example.blockbuzznyc.model.MapPin
 import com.google.android.gms.maps.GoogleMap
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
+import com.example.blockbuzznyc.ImageHandler
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
+        val imageHandler = ImageHandler(this, this) // Instantiate ImageHandler
         setContent {
             BlockBuzzNYCTheme {
-                AppNavigation()
+                AppNavigation(imageHandler) // Pass ImageHandler to AppNavigation
             }
         }
     }
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(imageHandler: ImageHandler) {
     val navController = rememberNavController()
     val isLoggedIn = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
 
@@ -98,7 +107,7 @@ fun AppNavigation() {
             })
         }
         composable("main") {
-            GoogleMapComposable(onLogout = { isLoggedIn.value = false })
+            GoogleMapComposable(imageHandler, onLogout = { isLoggedIn.value = false })
         }
         composable("signup") {
             SignUpScreen(onSignUpSuccessful = { isLoggedIn.value = true })
@@ -108,13 +117,13 @@ fun AppNavigation() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GoogleMapComposable(onLogout: () -> Unit) {
+fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
     var pinTitle by remember { mutableStateOf("") }
+    var pinDescription by remember { mutableStateOf("") }
     var selectedLatLng: LatLng? by remember { mutableStateOf(null) }
     var mapViewInstance: MapView? by remember { mutableStateOf(null) }
-
-    // State to track permission status
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
     var hasPermissions by remember { mutableStateOf(false) }
     val permissions = listOf(
         Manifest.permission.ACCESS_FINE_LOCATION,
@@ -210,18 +219,9 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
     }
 
     if (showDialog) {
-        var pinDescription by remember { mutableStateOf("") } // State to hold the pin description
-
         AlertDialog(
-            onDismissRequest = {
-                showDialog = false
-            },
-            title = {
-                Text(
-                    text = "Create a Pin",
-                    color = Color.Black
-                )
-            },
+            onDismissRequest = { showDialog = false },
+            title = { Text("Create a Pin") },
             text = {
                 Column {
                     TextField(
@@ -234,9 +234,23 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
                         value = pinDescription,
                         onValueChange = { pinDescription = it },
                         label = { Text("Description") },
-                        singleLine = true // Set to false if you want multi-line input
+                        singleLine = true
                     )
-                    // Include additional fields for photo selection, etc., if needed
+                    Button(onClick = {
+                        imageHandler.takePicture { uri ->
+                            imageUri = uri
+                        }
+                    }) {
+                        Text(text = "Take Photo")
+                    }
+                    imageUri?.let { uri ->
+                        Image(
+                            painter = rememberAsyncImagePainter(model = uri),
+                            contentDescription = "Captured Image",
+                            modifier = Modifier.size(100.dp), // Set a specific size for the image
+                            contentScale = ContentScale.Fit // Adjust the scaling to fit the size while maintaining the aspect ratio
+                        )
+                    }
                 }
             },
             confirmButton = {
@@ -244,40 +258,23 @@ fun GoogleMapComposable(onLogout: () -> Unit) {
                     onClick = {
                         showDialog = false
                         selectedLatLng?.let { latLng ->
+                            // Construct the MapPin object with all the details
                             val mapPin = MapPin(
                                 title = pinTitle,
                                 description = pinDescription,
                                 latitude = latLng.latitude,
-                                longitude = latLng.longitude
-                                // Include additional fields here as necessary
+                                longitude = latLng.longitude,
+                                photoUrl = imageUri.toString() // Use the captured image URI
                             )
+                            // Handle saving the pin to Firestore and uploading the image
+                            // (this could involve uploading the image to Firebase Storage first)
                             savePinToFirestore(mapPin)
-                            mapViewInstance?.getMapAsync { googleMap ->
-                                googleMap.addMarker(
-                                    MarkerOptions()
-                                        .position(latLng)
-                                        .title(pinTitle)
-                                        // Optionally, you can set a snippet for the description
-                                        .snippet(pinDescription)
-                                )
-                            }
                         }
                     }
-                ) {
-                    Text(
-                        text = "Confirm",
-                        color = MaterialTheme.colorScheme.onSecondary
-                    )
-                }
+                ) { Text("Confirm") }
             },
             dismissButton = {
-                Button(
-                    onClick = {
-                        showDialog = false
-                    }
-                ) {
-                    Text(text = "Cancel")
-                }
+                Button(onClick = { showDialog = false }) { Text("Cancel") }
             }
         )
     }
