@@ -3,8 +3,8 @@
 package com.example.blockbuzznyc
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
-import android.media.Image
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.location.LocationServices
 import android.util.Log
+import android.view.LayoutInflater
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -56,14 +57,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
-import coil.compose.rememberImagePainter
 import com.example.blockbuzznyc.model.MapPin
 import com.google.android.gms.maps.GoogleMap
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
-import com.example.blockbuzznyc.ImageHandler
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -169,7 +168,17 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
                 Log.w("Firestore", "Error adding document", e)
             }
     }
+    fun setupGoogleMap(googleMap: GoogleMap, context: Context) {
+        // Set custom info window adapter
+        val infoWindowAdapter = CustomInfoWindowAdapter(context)
+        googleMap.setInfoWindowAdapter(infoWindowAdapter)
 
+        // Set a listener for marker click
+        googleMap.setOnMarkerClickListener { marker ->
+            marker.showInfoWindow()
+            true  // Return true to indicate that we have handled the event
+        }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -193,6 +202,7 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
                         mapViewInstance = mapView
                         mapView.onCreate(null)
                         mapView.getMapAsync { googleMap ->
+                            setupGoogleMap(googleMap, context)
                             val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
                             fusedLocationClient.lastLocation
                                 .addOnSuccessListener { location ->
@@ -323,6 +333,7 @@ fun PermissionRequestUI(
     }
 }
 
+data class PinInfo(val description: String, val photoUrl: String)
 
 fun fetchAndDisplayPins(googleMap: GoogleMap) {
     val db = Firebase.firestore
@@ -332,7 +343,19 @@ fun fetchAndDisplayPins(googleMap: GoogleMap) {
             for (document in documents) {
                 val mapPin = document.toObject(MapPin::class.java)
                 val location = LatLng(mapPin.latitude, mapPin.longitude)
-                googleMap.addMarker(MarkerOptions().position(location).title(mapPin.title))
+                val marker = googleMap.addMarker(
+                    MarkerOptions()
+                        .position(location)
+                        .title(mapPin.title)
+                        // Use just the title or a brief description as the snippet
+                        .snippet(mapPin.description)
+                )
+                Log.d("MapPin", "Photo URL: ${mapPin.photoUrl}")
+
+                // Set the full description and photo URL as the tag
+                if (marker != null) {
+                    marker.tag = PinInfo(mapPin.description, mapPin.photoUrl)
+                }
             }
         }
         .addOnFailureListener { exception ->
