@@ -28,10 +28,12 @@ class CustomInfoWindowAdapter(private val context: Context) : GoogleMap.InfoWind
         if (pinInfo != null) {
             description.text = pinInfo.description
             image.load(pinInfo.photoUrl) {
+                Log.d("MapPin", "Loading image: ${pinInfo.photoUrl}")
                 crossfade(true)
                 error(R.drawable.placeholder_image) // Placeholder for error
                 listener(
                     onSuccess = { _, _ ->
+                        Log.d("MapPin", "Image loaded successfully")
                         // Image successfully loaded; update the info window.
                         (context as? Activity)?.runOnUiThread {
                             marker.showInfoWindow()
@@ -44,11 +46,7 @@ class CustomInfoWindowAdapter(private val context: Context) : GoogleMap.InfoWind
                     }
                 )
             }
-
-
-
         }
-
         return view
     }
 

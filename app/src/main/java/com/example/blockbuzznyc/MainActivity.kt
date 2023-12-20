@@ -59,10 +59,13 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.blockbuzznyc.model.MapPin
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.firestore
+import com.google.firebase.storage.storage
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -157,17 +160,8 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
         FirebaseAuth.getInstance().signOut()
         onLogout()
     }
-    fun savePinToFirestore(mapPin: MapPin) {
-        val db = Firebase.firestore
-        db.collection("pins")
-            .add(mapPin)
-            .addOnSuccessListener { documentReference ->
-                Log.d("Firestore", "DocumentSnapshot added with ID: ${documentReference.id}")
-            }
-            .addOnFailureListener { e ->
-                Log.w("Firestore", "Error adding document", e)
-            }
-    }
+
+
     fun setupGoogleMap(googleMap: GoogleMap, context: Context) {
         // Set custom info window adapter
         val infoWindowAdapter = CustomInfoWindowAdapter(context)
@@ -268,17 +262,22 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
                     onClick = {
                         showDialog = false
                         selectedLatLng?.let { latLng ->
-                            // Construct the MapPin object with all the details
                             val mapPin = MapPin(
                                 title = pinTitle,
                                 description = pinDescription,
                                 latitude = latLng.latitude,
                                 longitude = latLng.longitude,
-                                photoUrl = imageUri.toString() // Use the captured image URI
+                                photoUrl = ""
                             )
-                            // Handle saving the pin to Firestore and uploading the image
-                            // (this could involve uploading the image to Firebase Storage first)
-                            savePinToFirestore(mapPin)
+                            imageUri?.let { uri ->
+                                confirmAndCreatePin(mapPin, uri) { success ->
+                                    if (success) {
+                                        Log.d("MapPin", "Pin created successfully")
+                                    } else {
+                                        Log.d("MapPin", "Pin creation failed")
+                                    }
+                                }
+                            }
                         }
                     }
                 ) { Text("Confirm") }
@@ -290,6 +289,37 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
     }
 }
 
+fun savePinToFirestore(mapPin: MapPin): Task<DocumentReference> {
+    val db = Firebase.firestore
+    return db.collection("pins").add(mapPin)
+}
+
+
+fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, onComplete: (Boolean) -> Unit) {
+    val storageRef = Firebase.storage.reference
+    val imageRef = storageRef.child("pin_images/${imageUri.lastPathSegment}")
+    val uploadTask = imageRef.putFile(imageUri)
+
+    uploadTask.addOnSuccessListener { taskSnapshot ->
+        Log.d("MapPin", "confirmAndCreatePin called with URI: $imageUri")
+        taskSnapshot.storage.downloadUrl.addOnSuccessListener { downloadUri ->
+            val newMapPin = mapPin.copy(photoUrl = downloadUri.toString())
+            savePinToFirestore(newMapPin).addOnSuccessListener {
+                Log.d("MapPin", "Pin saved successfully")
+                onComplete(true)
+            }.addOnFailureListener { e ->
+                Log.e("MapPin", "Error saving pin to Firestore", e)
+                onComplete(false)
+            }
+        }.addOnFailureListener { e ->
+            Log.e("MapPin", "Error getting download URL", e)
+            onComplete(false)
+        }
+    }.addOnFailureListener { e ->
+        Log.e("MapPin", "Error uploading image", e)
+        onComplete(false)
+    }
+}
 
 
 @Composable
@@ -354,7 +384,10 @@ fun fetchAndDisplayPins(googleMap: GoogleMap) {
 
                 // Set the full description and photo URL as the tag
                 if (marker != null) {
-                    marker.tag = PinInfo(mapPin.description, mapPin.photoUrl)
+                    marker.tag = PinInfo(
+                        description = mapPin.description,
+                        photoUrl = mapPin.photoUrl
+                    )
                 }
             }
         }
