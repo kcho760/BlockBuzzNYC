@@ -42,10 +42,12 @@ import com.google.android.gms.location.LocationServices
 import android.util.Log
 import android.view.LayoutInflater
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -66,6 +68,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
+import androidx.compose.material.icons.filled.MyLocation
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -132,6 +136,7 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
         Manifest.permission.CAMERA
     )
     val context = LocalContext.current
+    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
     // Check and update permission status
     LaunchedEffect(Unit) {
@@ -173,13 +178,22 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
             true  // Return true to indicate that we have handled the event
         }
     }
+
+    fun recenterMap(googleMap: GoogleMap) {
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            location?.let {
+                val currentLatLng = LatLng(it.latitude, it.longitude)
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
+            }
+        }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("BlockBuzzNYC") },
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
-                    containerColor = SteelBlue, // Set the background color here
-                    titleContentColor = Color.White // Set the title text color here
+                    containerColor = SteelBlue,
+                    titleContentColor = Color.White
                 ),
                 actions = {
                     IconButton(onClick = { logoutUser(onLogout) }) {
@@ -189,37 +203,49 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
             )
         }
     ) { paddingValues ->
-        Column(modifier = Modifier.padding(paddingValues)) {
-            AndroidView(
-                factory = { context ->
-                    MapView(context).also { mapView ->
-                        mapViewInstance = mapView
-                        mapView.onCreate(null)
-                        mapView.getMapAsync { googleMap ->
-                            setupGoogleMap(googleMap, context)
-                            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-                            fusedLocationClient.lastLocation
-                                .addOnSuccessListener { location ->
-                                    location?.let {
-                                        val currentLatLng = LatLng(it.latitude, it.longitude)
-                                        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
-                                    } ?: run {
-                                        val defaultLatLng = LatLng(40.7128, -74.0060) // New York City coordinates
-                                        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 17f))
+        Box(modifier = Modifier.padding(paddingValues)) {
+            Column {
+                AndroidView(
+                    factory = { context ->
+                        MapView(context).also { mapView ->
+                            mapViewInstance = mapView
+                            mapView.onCreate(null)
+                            mapView.getMapAsync { googleMap ->
+                                setupGoogleMap(googleMap, context)
+                                val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+                                fusedLocationClient.lastLocation
+                                    .addOnSuccessListener { location ->
+                                        location?.let {
+                                            val currentLatLng = LatLng(it.latitude, it.longitude)
+                                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
+                                        } ?: run {
+                                            val defaultLatLng = LatLng(40.7128, -74.0060) // Default to New York City coordinates
+                                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 17f))
+                                        }
                                     }
+                                fetchAndDisplayPins(googleMap)
+                                googleMap.setOnMapLongClickListener { latLng ->
+                                    selectedLatLng = latLng
+                                    showDialog = true
                                 }
-                            fetchAndDisplayPins(googleMap)
-                            googleMap.setOnMapLongClickListener { latLng -> // What happens when the map is long clicked
-                                selectedLatLng = latLng
-                                showDialog = true
                             }
                         }
+                    },
+                    update = { mapView ->
+                        mapView.onResume()
                     }
-                },
-                update = { mapView ->
-                    mapView.onResume()
-                }
-            )}
+                )
+            }
+
+            FloatingActionButton(
+                onClick = { mapViewInstance?.getMapAsync { googleMap -> recenterMap(googleMap) } },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+            ) {
+                Icon(Icons.Filled.MyLocation, contentDescription = "Recenter")
+            }
+        }
     }
 
     if (showDialog) {
