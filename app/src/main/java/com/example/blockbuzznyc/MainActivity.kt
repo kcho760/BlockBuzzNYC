@@ -347,8 +347,6 @@ fun savePinToFirestore(mapPin: MapPin): Task<DocumentReference> {
         }
 }
 
-// And in confirmAndCreatePin, log the result of the upload task
-
 
 
 fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, onComplete: (Boolean) -> Unit) {
