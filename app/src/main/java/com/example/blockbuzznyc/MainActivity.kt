@@ -40,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.location.LocationServices
 import android.util.Log
-import android.view.LayoutInflater
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -137,6 +136,9 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
     )
     val context = LocalContext.current
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+    var showPinInfoDialog by remember { mutableStateOf(false) }
+    var selectedMapPin: MapPin? by remember { mutableStateOf(null) }
+
 
     // Check and update permission status
     LaunchedEffect(Unit) {
@@ -173,8 +175,21 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
         googleMap.setInfoWindowAdapter(infoWindowAdapter)
 
         // Set a listener for marker click
+
         googleMap.setOnMarkerClickListener { marker ->
-            marker.showInfoWindow()
+            val pinInfo = marker.tag as? PinInfo
+            pinInfo?.let {
+                selectedMapPin = marker.title?.let { it1 ->
+                    MapPin(
+                        title = it1,
+                        description = it.description,
+                        latitude = marker.position.latitude,
+                        longitude = marker.position.longitude,
+                        photoUrl = it.photoUrl
+                    )
+                }
+                showPinInfoDialog = true
+            }
             true  // Return true to indicate that we have handled the event
         }
     }
@@ -245,6 +260,12 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
             ) {
                 Icon(Icons.Filled.MyLocation, contentDescription = "Recenter")
             }
+        }
+    }
+    if (showPinInfoDialog) {
+        PinInfoDialog(mapPin = selectedMapPin) {
+            showPinInfoDialog = false
+            selectedMapPin = null
         }
     }
 
@@ -318,7 +339,16 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
 fun savePinToFirestore(mapPin: MapPin): Task<DocumentReference> {
     val db = Firebase.firestore
     return db.collection("pins").add(mapPin)
+        .addOnSuccessListener {
+            Log.d("Firestore", "Pin saved successfully with ID: ${it.id}")
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Error saving pin to Firestore", e)
+        }
 }
+
+// And in confirmAndCreatePin, log the result of the upload task
+
 
 
 fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, onComplete: (Boolean) -> Unit) {
@@ -346,7 +376,6 @@ fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, onComplete: (Boolean) -> 
         onComplete(false)
     }
 }
-
 
 @Composable
 fun PermissionRequestUI(
