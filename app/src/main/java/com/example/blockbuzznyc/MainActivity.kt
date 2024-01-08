@@ -5,6 +5,7 @@ package com.example.blockbuzznyc
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -138,6 +139,8 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     var showPinInfoDialog by remember { mutableStateOf(false) }
     var selectedMapPin: MapPin? by remember { mutableStateOf(null) }
+    var googleMapInstance: GoogleMap? by remember { mutableStateOf(null) }
+    var currentLatLngInstance: LatLng? by remember { mutableStateOf(null) }
 
 
     // Check and update permission status
@@ -167,7 +170,6 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
         FirebaseAuth.getInstance().signOut()
         onLogout()
     }
-
 
     fun setupGoogleMap(googleMap: GoogleMap, context: Context) {
         // Set custom info window adapter
@@ -226,19 +228,21 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
                             mapViewInstance = mapView
                             mapView.onCreate(null)
                             mapView.getMapAsync { googleMap ->
+                                googleMapInstance = googleMap
                                 setupGoogleMap(googleMap, context)
                                 val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-                                fusedLocationClient.lastLocation
-                                    .addOnSuccessListener { location ->
-                                        location?.let {
-                                            val currentLatLng = LatLng(it.latitude, it.longitude)
-                                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
-                                        } ?: run {
-                                            val defaultLatLng = LatLng(40.7128, -74.0060) // Default to New York City coordinates
-                                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 17f))
-                                        }
+                                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                                    location?.let {
+                                        val currentLatLng = LatLng(it.latitude, it.longitude)
+                                        currentLatLngInstance = currentLatLng
+                                        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
+                                        fetchAndDisplayPins(googleMap, currentLatLng) // Pass currentLatLng to the function
+                                    } ?: run {
+                                        val defaultLatLng = LatLng(40.7128, -74.0060) // Default to New York City coordinates
+                                        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 17f))
+                                        fetchAndDisplayPins(googleMap, defaultLatLng) // Pass defaultLatLng to the function
                                     }
-                                fetchAndDisplayPins(googleMap)
+                                }
                                 googleMap.setOnMapLongClickListener { latLng ->
                                     selectedLatLng = latLng
                                     showDialog = true
@@ -317,11 +321,17 @@ fun GoogleMapComposable(imageHandler: ImageHandler ,onLogout: () -> Unit) {
                                 photoUrl = ""
                             )
                             imageUri?.let { uri ->
-                                confirmAndCreatePin(mapPin, uri) { success ->
-                                    if (success) {
-                                        Log.d("MapPin", "Pin created successfully")
-                                    } else {
-                                        Log.d("MapPin", "Pin creation failed")
+                                // Use googleMapInstance and currentLatLngInstance here
+                                googleMapInstance?.let { googleMap ->
+                                    currentLatLngInstance?.let { currentLatLng ->
+                                        confirmAndCreatePin(mapPin, uri, googleMap, currentLatLng) { success ->
+                                            if (success) {
+                                                Log.d("MapPin", "Pin created successfully")
+                                                // Refresh pins here if needed
+                                            } else {
+                                                Log.d("MapPin", "Pin creation failed")
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -348,8 +358,7 @@ fun savePinToFirestore(mapPin: MapPin): Task<DocumentReference> {
 }
 
 
-
-fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, onComplete: (Boolean) -> Unit) {
+fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, googleMap: GoogleMap, currentLatLng: LatLng, onComplete: (Boolean) -> Unit) {
     val storageRef = Firebase.storage.reference
     val imageRef = storageRef.child("pin_images/${imageUri.lastPathSegment}")
     val uploadTask = imageRef.putFile(imageUri)
@@ -359,6 +368,7 @@ fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, onComplete: (Boolean) -> 
         taskSnapshot.storage.downloadUrl.addOnSuccessListener { downloadUri ->
             val newMapPin = mapPin.copy(photoUrl = downloadUri.toString())
             savePinToFirestore(newMapPin).addOnSuccessListener {
+                fetchAndDisplayPins(googleMap, currentLatLng)
                 Log.d("MapPin", "Pin saved successfully")
                 onComplete(true)
             }.addOnFailureListener { e ->
@@ -418,26 +428,35 @@ fun PermissionRequestUI(
 
 data class PinInfo(val description: String, val photoUrl: String)
 
-fun fetchAndDisplayPins(googleMap: GoogleMap) {
+fun distanceBetweenPoints(startLatLng: LatLng, endLatLng: LatLng): Float {
+    val results = FloatArray(1)
+    Location.distanceBetween(
+        startLatLng.latitude, startLatLng.longitude,
+        endLatLng.latitude, endLatLng.longitude,
+        results
+    )
+    return results[0]
+}
+
+fun fetchAndDisplayPins(googleMap: GoogleMap, currentLocation: LatLng) {
+    googleMap.clear()
     val db = Firebase.firestore
     db.collection("pins")
         .get()
         .addOnSuccessListener { documents ->
             for (document in documents) {
                 val mapPin = document.toObject(MapPin::class.java)
-                val location = LatLng(mapPin.latitude, mapPin.longitude)
-                val marker = googleMap.addMarker(
-                    MarkerOptions()
-                        .position(location)
-                        .title(mapPin.title)
-                        // Use just the title or a brief description as the snippet
-                        .snippet(mapPin.description)
-                )
-                Log.d("MapPin", "Photo URL: ${mapPin.photoUrl}")
+                val pinLocation = LatLng(mapPin.latitude, mapPin.longitude)
 
-                // Set the full description and photo URL as the tag
-                if (marker != null) {
-                    marker.tag = PinInfo(
+                // Check if the pin is within 200 meters (two blocks) of the current location
+                if (distanceBetweenPoints(currentLocation, pinLocation) <= 200) {
+                    val marker = googleMap.addMarker(
+                        MarkerOptions()
+                            .position(pinLocation)
+                            .title(mapPin.title)
+                            .snippet(mapPin.description)
+                    )
+                    marker?.tag = PinInfo(
                         description = mapPin.description,
                         photoUrl = mapPin.photoUrl
                     )
