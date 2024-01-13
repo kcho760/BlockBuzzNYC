@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">BlockBuzzNYC</string>
     <string name="google_maps_key" translatable="false">YOUR_API_KEY_HERE</string>
+    <string name="default_web_client_id" translatable="false">15720236856-0q14kp2dv3hpvt6go2o831sobep98b08.apps.googleusercontent.com</string>
 </resources>

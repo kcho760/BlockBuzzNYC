@@ -4,19 +4,28 @@ import android.util.Log
 import android.util.Patterns
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.blockbuzznyc.ui.theme.DarkCharcoal
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -25,6 +34,11 @@ fun SignUpScreen(onSignUpSuccessful: () -> Unit) {
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
+        .setFilterByAuthorizedAccounts(true)
+        .setServerClientId(R.string.default_web_client_id.toString())
+        .build()
 
     Column(
         modifier = Modifier
@@ -82,6 +96,7 @@ fun SignUpScreen(onSignUpSuccessful: () -> Unit) {
                     Text("Sign Up")
                 }
 
+
                 // Display error message
                 errorMessage?.let {
                     Text(text = it, color = Color.Red)
@@ -90,7 +105,15 @@ fun SignUpScreen(onSignUpSuccessful: () -> Unit) {
         }
     }
 }
-fun registerUser(email: String, password: String, confirmPassword: String, onSignUpSuccessful: () -> Unit, onSignUpFailed: (String) -> Unit) {
+
+private fun registerUser(
+    email: String,
+    password: String,
+    confirmPassword: String,
+    onSignUpSuccessful: () -> Unit,
+    onSignUpFailed: (String) -> Unit
+) {
+    Log.d("SignUp", "Starting user registration")
     // Check if the email is valid
     if (email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
         onSignUpFailed("Please enter a valid email address")

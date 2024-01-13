@@ -1,6 +1,9 @@
 package com.example.blockbuzznyc
 
+import android.content.Context
+import android.content.Intent
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,22 +26,53 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.blockbuzznyc.ui.theme.DarkCharcoal
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun LoginScreen(navController: NavController, onLoginSuccessful: () -> Unit) {
+fun LoginScreen(
+    navController: NavController,
+    onLoginSuccessful: () -> Unit,
+    googleSignInLauncher: ActivityResultLauncher<Intent>,
+    activityContext: Context
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+
     if (FirebaseAuth.getInstance().currentUser != null) {
         onLoginSuccessful()
     }
+
+    fun googleSignIn(
+        context: Context,
+        onLoginSuccessful: () -> Unit,
+        onLoginFailed: (String) -> Unit,
+        googleSignInLauncher: ActivityResultLauncher<Intent>
+    ) {
+        Log.d("SignUp", "Initiating Google Sign-In")
+
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken("15720236856-0q14kp2dv3hpvt6go2o831sobep98b08.apps.googleusercontent.com")
+            .requestEmail()
+            .build()
+
+
+        val googleSignInClient = GoogleSignIn.getClient(context, gso)
+        val signInIntent = googleSignInClient.signInIntent
+        googleSignInLauncher.launch(signInIntent)
+
+        Log.d("SignUp", "Google Sign-In Intent launched")
+    }
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -106,6 +140,17 @@ fun LoginScreen(navController: NavController, onLoginSuccessful: () -> Unit) {
                     }) {
                         Text("Dev Login")
                     }
+                    Button(onClick = {
+                        googleSignIn(
+                            context = context,
+                            onLoginSuccessful = onLoginSuccessful,
+                            onLoginFailed = { error -> errorMessage = error },
+                            googleSignInLauncher = googleSignInLauncher
+                        )
+                    }) {
+                        Text("Sign in with Google")
+                    }
+
                     Button(onClick = { navController.navigate("signup") }) {
                         Text("Don't have an account?\nSign up!", textAlign = TextAlign.Center)
                     }
@@ -116,9 +161,12 @@ fun LoginScreen(navController: NavController, onLoginSuccessful: () -> Unit) {
 }
 
 
+
 fun loginUser(email: String, password: String, onLoginSuccessful: () -> Unit, onLoginFailed: (String) -> Unit) {
-    // Check if the email and password fields are not empty
+    Log.d("SignUp", "Attempting to log in user: $email")
+
     if (email.isBlank() || password.isBlank()) {
+        Log.d("SignUp", "Email or password is blank")
         onLoginFailed("Email and password must not be empty")
         return
     }
@@ -127,12 +175,11 @@ fun loginUser(email: String, password: String, onLoginSuccessful: () -> Unit, on
     FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
+                Log.d("SignUp", "Login successful for user: $email")
                 onLoginSuccessful()
             } else {
-                // Handle errors, such as incorrect credentials
-                Log.d("Login", "Error logging in: ${task.exception}")
+                Log.d("SignUp", "Error logging in: ${task.exception}")
                 onLoginFailed(task.exception?.message ?: "Login failed")
             }
         }
 }
-
