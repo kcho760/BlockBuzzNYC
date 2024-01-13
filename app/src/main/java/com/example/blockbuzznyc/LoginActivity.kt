@@ -131,8 +131,8 @@ fun LoginScreen(
                     }
                     Button(onClick = {
                         loginUser(
-                            "kcho760@gmail.com",
-                            "kevinc13",
+                            "dev@gmail.com",
+                            "password",
                             onLoginSuccessful,
                             onLoginFailed = { error ->
                                 errorMessage = error // Update the error message

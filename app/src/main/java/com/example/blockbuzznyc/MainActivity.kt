@@ -154,7 +154,13 @@ fun MainScreen(
             composable("login") {
                 LoginScreen(
                     navController = navController,
-                    onLoginSuccessful = { /* ... */ },
+                    onLoginSuccessful = {
+                        // Navigate to the main screen when login is successful
+                        isLoggedIn.value = true
+                        navController.navigate("main") {
+                            popUpTo("main") { inclusive = true }
+                        }
+                    },
                     googleSignInLauncher = googleSignInLauncher,
                     activityContext = activityContext // Pass the activity context
                 )
