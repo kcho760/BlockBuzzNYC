@@ -47,9 +47,12 @@ import com.example.blockbuzznyc.ui.theme.BlockBuzzNYCTheme
 import com.example.blockbuzznyc.ui.theme.SteelBlue
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.firestore
 
 class MainActivity : ComponentActivity() {
     private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
@@ -113,22 +116,40 @@ fun MainScreen(
     navController: NavHostController,
     isLoggedIn: MutableState<Boolean>
 ) {
-    LaunchedEffect(isLoggedIn.value) {
-        if (isLoggedIn.value) {
-            navController.navigate("main") {
-                popUpTo("login") { inclusive = true }
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val username = remember {mutableStateOf("")}
+    val showUsernameDialog = remember { mutableStateOf(false) }
+
+    LaunchedEffect(key1 = isLoggedIn.value) {
+        if (isLoggedIn.value && currentUser != null) {
+            fetchUsername(currentUser.uid) { fetchedUsername ->
+                if (fetchedUsername.isBlank()) {
+                    showUsernameDialog.value = true
+                } else {
+                    username.value = fetchedUsername
+                }
             }
         }
     }
+
+    if (showUsernameDialog.value) {
+        UsernameCreationDialog(
+            onUsernameSet = { newUsername ->
+                saveUsernameToFirestore(currentUser!!.uid, newUsername) {
+                    showUsernameDialog.value = false
+                    username.value = newUsername
+                }
+            }
+        )
+    }
+
 
 
     Scaffold(
         topBar = {
             if (isLoggedIn.value) {
-                val currentUser = FirebaseAuth.getInstance().currentUser
-                val userEmail = currentUser?.email ?: "" // Get the user's email or use an empty string if not available
                 TopAppBar(
-                    title = { Text("BlockBuzzNYC - $userEmail") }, // Include the user's email in the title
+                    title = { Text("BlockBuzzNYC - ${username.value}") }, // Include the user's email in the title
                     colors = TopAppBarDefaults.mediumTopAppBarColors(
                         containerColor = SteelBlue,
                         titleContentColor = Color.White
@@ -223,6 +244,34 @@ fun PermissionRequestUI(
     }
 }
 
+fun fetchUsername(userId: String, onUsernameFetched: (String) -> Unit) {
+    val db = Firebase.firestore
+    db.collection("users").document(userId).get()
+        .addOnSuccessListener { document ->
+            val username = document.getString("username") ?: ""
+            onUsernameFetched(username)
+        }
+        .addOnFailureListener {
+            // Handle failure, maybe use a default value or an error placeholder
+            onUsernameFetched("Unknown User")
+        }
+}
+fun saveUsernameToFirestore(userId: String, username: String, onSaved: () -> Unit) {
+    val userData = mapOf(
+        "userId" to userId,
+        "username" to username
+    )
+
+    Firebase.firestore.collection("users").document(userId).set(userData, SetOptions.merge())
+        .addOnSuccessListener {
+            Log.d("Firestore", "User data saved successfully")
+            onSaved()
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Error saving user data", e)
+            // You might want to handle this error in your UI as well
+        }
+}
 
 
 

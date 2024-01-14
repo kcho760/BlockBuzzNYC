@@ -25,13 +25,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.blockbuzznyc.ui.theme.DarkCharcoal
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.firestore
 
 @Composable
 fun SignUpScreen(onSignUpSuccessful: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
@@ -76,11 +79,17 @@ fun SignUpScreen(onSignUpSuccessful: () -> Unit) {
                     label = { Text("Confirm Password") },
                     visualTransformation = PasswordVisualTransformation()
                 )
+                TextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") }
+                )
                 Button(onClick = {
                     registerUser(
                         email = email,
                         password = password,
                         confirmPassword = confirmPassword,
+                        username = username,
                         onSignUpSuccessful = onSignUpSuccessful,
                         onSignUpFailed = { error ->
                             errorMessage = error
@@ -104,11 +113,16 @@ private fun registerUser(
     email: String,
     password: String,
     confirmPassword: String,
+    username: String,
     onSignUpSuccessful: () -> Unit,
     onSignUpFailed: (String) -> Unit
 ) {
     Log.d("SignUp", "Starting user registration")
     // Check if the email is valid
+    if (username.isBlank()) {
+        onSignUpFailed("Username cannot be empty")
+        return
+    }
     if (email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
         onSignUpFailed("Please enter a valid email address")
         return
@@ -125,18 +139,70 @@ private fun registerUser(
         onSignUpFailed("Password must be at least 6 characters")
         return
     }
+    isUsernameAvailable(username) { isAvailable -> //create function once model is set up
+        if (!isAvailable) {
+            onSignUpFailed("Username is already taken")
+            return@isUsernameAvailable
+        }
 
-    // Create a new user with Firebase Authentication
-    FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password)
-        .addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                // Sign up success, update UI with the signed-in user's information
-                Log.d("SignUp", "createUserWithEmail:success")
-                onSignUpSuccessful()
-            } else {
-                // If sign up fails, display a message to the user.
-                Log.w("SignUp", "createUserWithEmail:failure", task.exception)
-                onSignUpFailed(task.exception?.message ?: "Authentication failed.")
+        // Create a new user with Firebase Authentication
+        FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                    // Save the userId and username to Firestore
+                    saveUsernameToFirestore(userId, username, onSignUpSuccessful, onSignUpFailed)
+                    // Sign up success, update UI with the signed-in user's information
+                    Log.d("SignUp", "createUserWithEmail:success")
+                    onSignUpSuccessful()
+                } else {
+                    // If sign up fails, display a message to the user.
+                    Log.w("SignUp", "createUserWithEmail:failure", task.exception)
+                    onSignUpFailed(task.exception?.message ?: "Authentication failed.")
+                }
             }
+    }
+}
+
+fun saveUsernameToFirestore(
+    userId: String,
+    username: String,
+    onSignUpSuccessful: () -> Unit,
+    onSignUpFailed: (String) -> Unit
+) {
+    val user = hashMapOf(
+        "userId" to userId,
+        "username" to username
+    )
+
+    Firebase.firestore.collection("users").document(userId).set(user)
+        .addOnSuccessListener {
+            Log.d("Firestore", "User data saved successfully")
+            onSignUpSuccessful()
+        }
+        .addOnFailureListener { e ->
+            Log.e("Firestore", "Error saving user data", e)
+            onSignUpFailed("Failed to save user data")
+        }
+}
+
+fun isUsernameAvailable(username: String, callback: (Boolean) -> Unit) {
+    val db = Firebase.firestore
+
+    db.collection("users")
+        .whereEqualTo("username", username)
+        .get()
+        .addOnSuccessListener { documents ->
+            if (documents.isEmpty) {
+                // Username is available
+                callback(true)
+            } else {
+                // Username is taken
+                callback(false)
+            }
+        }
+        .addOnFailureListener {
+            // Handle any errors, for simplicity, assume username is not available
+            callback(false)
         }
 }
