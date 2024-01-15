@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.blockbuzznyc.ui.theme.DarkCharcoal
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
@@ -40,7 +39,7 @@ fun SignUpScreen(onSignUpSuccessful: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkCharcoal),
+            .background(MaterialTheme.colorScheme.primary),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

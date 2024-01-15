@@ -18,9 +18,8 @@ Optimization and bug fixes:
     -check on delay between pin creation and pin showing up on map
     -better pin asset
 Google Places API
+
 ~~-Google account login~~
-
-
-
 ~~look up ability to use google map functionality such as buisness info~~
 ~~google account login~~
+~~username~~

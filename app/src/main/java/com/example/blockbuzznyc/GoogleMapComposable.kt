@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
@@ -129,7 +131,7 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
     }
 
     Box {
-        Column {
+        Column{
             AndroidView(
                 factory = { context ->
                     MapView(context).also { mapView ->
@@ -163,14 +165,34 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                 }
             )
         }
-
-        FloatingActionButton(
-            onClick = { mapViewInstance?.getMapAsync { googleMap -> recenterMap(googleMap) } },
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(16.dp),
+                .padding(bottom = 16.dp, end = 16.dp) // Adjust the padding as needed
         ) {
-            Icon(Icons.Filled.MyLocation, contentDescription = "Recenter")
+            // The Zoom In Button
+            FloatingActionButton(
+                onClick = { zoomInMap(googleMapInstance) },
+                modifier = Modifier.padding(bottom = 4.dp)
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "Zoom In")
+            }
+
+            // The Recenter Button
+            FloatingActionButton(
+                onClick = { mapViewInstance?.getMapAsync { googleMap -> recenterMap(googleMap) }},
+                modifier = Modifier.padding(bottom = 4.dp)
+            ) {
+                Icon(Icons.Filled.MyLocation, contentDescription = "Recenter")
+            }
+
+            // The Zoom Out Button
+            FloatingActionButton(
+                onClick = { zoomOutMap(googleMapInstance) },
+                modifier = Modifier.padding(bottom = 4.dp)
+            ) {
+                Icon(Icons.Filled.Remove, contentDescription = "Zoom Out")
+            }
         }
     }
 
@@ -251,6 +273,20 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                 Button(onClick = { showDialog = false }) { Text("Cancel") }
             }
         )
+    }
+}
+
+fun zoomInMap(googleMap: GoogleMap?) {
+    googleMap?.let {
+        val currentZoom = it.cameraPosition.zoom
+        it.animateCamera(CameraUpdateFactory.zoomTo(currentZoom + 1))
+    }
+}
+
+fun zoomOutMap(googleMap: GoogleMap?) {
+    googleMap?.let {
+        val currentZoom = it.cameraPosition.zoom
+        it.animateCamera(CameraUpdateFactory.zoomTo(currentZoom - 1))
     }
 }
 

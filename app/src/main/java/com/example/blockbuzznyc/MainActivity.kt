@@ -12,12 +12,18 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,7 +50,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.blockbuzznyc.ui.theme.BlockBuzzNYCTheme
-import com.example.blockbuzznyc.ui.theme.SteelBlue
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.Firebase
@@ -85,7 +90,7 @@ class MainActivity : ComponentActivity() {
             navController = rememberNavController()
             val isLoggedIn = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
             BlockBuzzNYCTheme {
-                MainScreen(imageHandler, googleSignInLauncher, this, navController, isLoggedIn)
+                MainScreen(imageHandler, googleSignInLauncher, this, isLoggedIn)
             }
         }
     }
@@ -113,12 +118,12 @@ fun MainScreen(
     imageHandler: ImageHandler,
     googleSignInLauncher: ActivityResultLauncher<Intent>,
     activityContext: Context,
-    navController: NavHostController,
     isLoggedIn: MutableState<Boolean>
 ) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     val username = remember {mutableStateOf("")}
     val showUsernameDialog = remember { mutableStateOf(false) }
+    val navController = rememberNavController()
 
     LaunchedEffect(key1 = isLoggedIn.value) {
         if (isLoggedIn.value && currentUser != null) {
@@ -151,7 +156,7 @@ fun MainScreen(
                 TopAppBar(
                     title = { Text("BlockBuzzNYC - ${username.value}") }, // Include the user's email in the title
                     colors = TopAppBarDefaults.mediumTopAppBarColors(
-                        containerColor = SteelBlue,
+                        containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = Color.White
                     ),
                     actions = {
@@ -165,37 +170,81 @@ fun MainScreen(
                     }
                 )
             }
+        },
+        bottomBar = {
+            if (isLoggedIn.value) {
+                BottomAppBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = Color.White
+                ) {
+                    Button(modifier = Modifier.weight(1f), onClick = {navController.navigate("profile") {
+                        popUpTo("profile") { inclusive = true }
+                    }}) {
+                        Text("Profile")
+                    }
+
+                    Button(modifier = Modifier.weight(1f), onClick = {navController.navigate("main") {
+                        popUpTo("main") { inclusive = true }
+                    }}) {
+                        Text("Map")
+                    }
+
+                    Button(modifier = Modifier.weight(1f), onClick = {navController.navigate("search") {
+                        popUpTo("search") { inclusive = true }
+                    }}) {
+                        Text("Search")
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "login",
+            startDestination = "main",
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("login") {
                 LoginScreen(
                     navController = navController,
                     onLoginSuccessful = {
-                        // Navigate to the main screen when login is successful
                         isLoggedIn.value = true
                         navController.navigate("main") {
                             popUpTo("main") { inclusive = true }
                         }
                     },
                     googleSignInLauncher = googleSignInLauncher,
-                    activityContext = activityContext // Pass the activity context
+                    activityContext = activityContext
                 )
             }
-            composable("main") {
+            composable(
+                "main",
+                enterTransition = { slideInFromRight() },
+                exitTransition = { slideOutToRight() }
+            ) {
                 GoogleMapComposable(imageHandler)
             }
-            composable("signup") {
+            composable(
+                "signup") {
                 SignUpScreen {
                     isLoggedIn.value = true
                     navController.navigate("main") {
                         popUpTo("signup") { inclusive = true }
                     }
                 }
+            }
+            composable(
+                "profile",
+                enterTransition = { slideInFromLeft() },
+                exitTransition = { slideOutToRight()}
+            ) {
+                ProfileScreen()
+            }
+            composable(
+                "search",
+                enterTransition = { slideInFromRight() },
+                exitTransition = { slideOutToRight() }
+            ) {
+                SearchScreen()
             }
         }
     }
@@ -273,8 +322,31 @@ fun saveUsernameToFirestore(userId: String, username: String, onSaved: () -> Uni
         }
 }
 
+fun slideInFromRight(): EnterTransition {
+    return slideInHorizontally(
+        initialOffsetX = { fullWidth -> fullWidth }, // Slide in from right
+        animationSpec = tween(700)
+    )
+}
+
+fun slideInFromLeft(): EnterTransition {
+    return slideInHorizontally(
+        initialOffsetX = { fullWidth -> -fullWidth }, // Slide in from right
+        animationSpec = tween(700)
+    )
+}
+
+fun slideOutToRight(): ExitTransition {
+    return slideOutHorizontally(
+        targetOffsetX = { fullWidth -> fullWidth }, // Slide out to right
+        animationSpec = tween(700)
+    )
+}
 
 
+enum class SlideDirection {
+    Left, Right
+}
 //@Preview(showBackground = true)
 //@Composable
 //fun GreetingPreview() {
