@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
     private lateinit var imageHandler: ImageHandler
     private lateinit var navController: NavHostController
-    private val isLoggedIn = mutableStateOf(false)
+    private val isLoggedIn = mutableStateOf(FirebaseAuth.getInstance().currentUser != null)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
@@ -90,7 +90,7 @@ class MainActivity : ComponentActivity() {
             navController = rememberNavController()
             val isLoggedIn = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
             BlockBuzzNYCTheme {
-                MainScreen(imageHandler, googleSignInLauncher, this, isLoggedIn)
+                MainScreen(imageHandler, googleSignInLauncher, this,navController, isLoggedIn)
             }
         }
     }
@@ -118,24 +118,37 @@ fun MainScreen(
     imageHandler: ImageHandler,
     googleSignInLauncher: ActivityResultLauncher<Intent>,
     activityContext: Context,
+    navController: NavHostController,
     isLoggedIn: MutableState<Boolean>
 ) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     val username = remember {mutableStateOf("")}
     val showUsernameDialog = remember { mutableStateOf(false) }
-    val navController = rememberNavController()
+
+    val startDestination = if (isLoggedIn.value) "main" else "login"
+
 
     LaunchedEffect(key1 = isLoggedIn.value) {
-        if (isLoggedIn.value && currentUser != null) {
-            fetchUsername(currentUser.uid) { fetchedUsername ->
-                if (fetchedUsername.isBlank()) {
-                    showUsernameDialog.value = true
-                } else {
-                    username.value = fetchedUsername
+        if (isLoggedIn.value) {
+            // User is logged in, fetch username or show dialog if username is not set.
+            currentUser?.let { user ->
+                fetchUsername(user.uid) { fetchedUsername ->
+                    if (fetchedUsername.isBlank()) {
+                        showUsernameDialog.value = true
+                    } else {
+                        username.value = fetchedUsername
+                    }
                 }
+            }
+        } else {
+            // User is not logged in, navigate to the login screen.
+            navController.navigate("login") {
+                // Clear back stack so the user can't navigate back to the main screen without logging in.
+                popUpTo("main") { inclusive = true }
             }
         }
     }
+
 
     if (showUsernameDialog.value) {
         UsernameCreationDialog(
@@ -148,11 +161,11 @@ fun MainScreen(
         )
     }
 
-
-
     Scaffold(
         topBar = {
             if (isLoggedIn.value) {
+                Log.d("TopBar", "${isLoggedIn.value}")
+                Log.d("TopBar", "TopAppBar called")
                 TopAppBar(
                     title = { Text("BlockBuzzNYC - ${username.value}") }, // Include the user's email in the title
                     colors = TopAppBarDefaults.mediumTopAppBarColors(
@@ -200,7 +213,7 @@ fun MainScreen(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "main",
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("login") {
