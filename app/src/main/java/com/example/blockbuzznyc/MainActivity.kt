@@ -237,7 +237,7 @@ fun MainScreen(
                 enterTransition = { slideInFromLeft() },
                 exitTransition = { slideOutToRight()}
             ) {
-                ProfileScreen()
+                ProfileScreen(imageHandler)
             }
             composable(
                 "search",
