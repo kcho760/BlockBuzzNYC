@@ -3,25 +3,31 @@
 package com.example.blockbuzznyc
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,11 +39,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.storage
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 
@@ -47,13 +55,14 @@ data class User(
     val profilePictureUrl: String? = null // Nullable if you want to allow users without a profile picture
 )
 
-
 @Composable
 fun ProfileScreen(imageHandler: ImageHandler) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     val userId = currentUser?.uid ?: ""
     var profilePictureUrl by remember { mutableStateOf<String?>(null) }
-    var refreshToggle by remember { mutableStateOf(false) } // Add a state to trigger recomposition
+    var refreshToggle by remember { mutableStateOf(false) }
+
+    //pick image from gallery for profile pic
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -66,17 +75,21 @@ fun ProfileScreen(imageHandler: ImageHandler) {
                     }
                 },
                 onFailure = {
-                    // Handle the failure case
+                    Log.d("ProfileScreen", "Failed to upload profile picture")
                 }
             )
         }
     }
 
-    // Fetch the user data from Firestore
+    // Define the userFlow outside LaunchedEffect
     val userFlow = flow {
         val userDoc = FirebaseFirestore.getInstance().collection("users").document(userId).get().await()
         val user = userDoc.toObject(User::class.java) ?: User()
         emit(user)
+    }
+    LaunchedEffect(refreshToggle) {
+        // Collect userFlow inside LaunchedEffect
+        val user = userFlow.first()
         profilePictureUrl = user.profilePictureUrl
     }
 
@@ -87,56 +100,73 @@ fun ProfileScreen(imageHandler: ImageHandler) {
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp)) // Add space at the top if necessary
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Username
             Text(text = "Username: ${user.username}")
 
             Spacer(modifier = Modifier.height(16.dp))
 
-
-            // Profile Picture Box
-            Box(
-                contentAlignment = Alignment.Center,
+            // Profile Picture Row
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .size(150.dp) // Adjust size according to your mockup
-                    .clip(CircleShape)
-                    .border(2.dp, Color.Gray, CircleShape)
-                    .clickable {
-                        // Invoke the image picker when the profile picture is clicked
-                        imagePickerLauncher.launch("image/*")
-                    }
+                    .padding(16.dp)
+                    .offset(x = (25).dp) // Adjust the position as needed
             ) {
-                profilePictureUrl?.let { imageUrl ->
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = "Profile Picture",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.matchParentSize() // Make image fill the Box
-                    )
-                } ?: run {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Default Profile Picture",
-                        modifier = Modifier.matchParentSize()
-                    )
+                // Profile Picture Box, which is clickable to pick an image from the gallery
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(150.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, Color.Gray, CircleShape)
+                        .clickable { imagePickerLauncher.launch("image/*") } // This will launch the image picker
+                ) {
+                    profilePictureUrl?.let { imageUrl ->
+                        AsyncImage(
+                            model = imageUrl,
+                            contentDescription = "Profile Picture",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.matchParentSize()
+                        )
+                    } ?: run {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Default Profile Picture",
+                            modifier = Modifier.matchParentSize()
+                        )
+                    }
                 }
-            }
-            Button(onClick = {
-                // Take a photo with the camera
-                imageHandler.takePicture { uri ->
+                // Camera Icon Button
+                IconButton(
+                onClick = { imageHandler.takePicture { uri ->
                     uri?.let {
-                        // Upload the image to Firebase and get the download URL
                         uploadImageToFirebaseStorage(userId, it) { imageUrl ->
-                            // Check if imageUrl is not null before updating
                             updateUserProfilePicture(userId, imageUrl) {
-                                // UI update logic here, e.g., fetch user data or show a success message
+                                Log.d("ProfileScreen", "Refresh toggle1: $refreshToggle")
+                                refreshToggle = !refreshToggle
+                                Log.d("ProfileScreen", "Refresh toggle2: $refreshToggle")
                             }
                         }
                     }
+                } },
+                    modifier = Modifier
+                        .size(48.dp)
+                        .offset(x = (-30).dp, y = 50.dp) // Adjust the position as needed
+                        .zIndex(1f) // Make sure the icon is above the profile picture
+                        .clip(CircleShape)
+                        .border(2.dp, Color.Gray, CircleShape)
+                        .background(Color.White, CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "Upload Profile Picture",
+                        modifier = Modifier.size(12.dp)
+                    )
                 }
-            }) {
-                Text(text = "Take Photo and Set Profile Picture")
+
+
             }
         }
     }

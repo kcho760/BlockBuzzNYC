@@ -356,10 +356,6 @@ fun slideOutToRight(): ExitTransition {
     )
 }
 
-
-enum class SlideDirection {
-    Left, Right
-}
 //@Preview(showBackground = true)
 //@Composable
 //fun GreetingPreview() {
