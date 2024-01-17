@@ -9,11 +9,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -140,17 +142,19 @@ fun ProfileScreen(imageHandler: ImageHandler) {
                 }
                 // Camera Icon Button
                 IconButton(
-                onClick = { imageHandler.takePicture { uri ->
-                    uri?.let {
-                        uploadImageToFirebaseStorage(userId, it) { imageUrl ->
-                            updateUserProfilePicture(userId, imageUrl) {
-                                Log.d("ProfileScreen", "Refresh toggle1: $refreshToggle")
-                                refreshToggle = !refreshToggle
-                                Log.d("ProfileScreen", "Refresh toggle2: $refreshToggle")
+                    onClick = {
+                        imageHandler.takePicture { uri ->
+                            uri?.let {
+                                uploadImageToFirebaseStorage(userId, it) { imageUrl ->
+                                    updateUserProfilePicture(userId, imageUrl) {
+                                        Log.d("ProfileScreen", "Refresh toggle1: $refreshToggle")
+                                        refreshToggle = !refreshToggle
+                                        Log.d("ProfileScreen", "Refresh toggle2: $refreshToggle")
+                                    }
+                                }
                             }
                         }
-                    }
-                } },
+                    },
                     modifier = Modifier
                         .size(48.dp)
                         .offset(x = (-30).dp, y = 50.dp) // Adjust the position as needed
@@ -165,8 +169,38 @@ fun ProfileScreen(imageHandler: ImageHandler) {
                         modifier = Modifier.size(12.dp)
                     )
                 }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .padding(8.dp)
+                    .background(Color.LightGray, CircleShape)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Placeholder for Pins count
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = "0")
+                        Text(text = "Pins")
+                    }
 
-
+                    // Placeholder for Likes count
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(text = "0")
+                        Text(text = "Likes")
+                    }
+                }
             }
         }
     }
@@ -210,4 +244,12 @@ fun updateUserProfilePicture(userId: String, profilePictureUrl: String, onSucces
         .addOnFailureListener {
             // Handle any failure in updating the Firestore document
         }
+}
+
+@Composable
+fun CountSection(count: Int, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = count.toString())
+        Text(text = label)
+    }
 }
