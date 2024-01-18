@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,10 +46,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
+import com.example.blockbuzznyc.model.MapPin
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.storage
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
@@ -65,6 +69,7 @@ fun ProfileScreen(imageHandler: ImageHandler) {
     val userId = currentUser?.uid ?: ""
     var profilePictureUrl by remember { mutableStateOf<String?>(null) }
     var refreshToggle by remember { mutableStateOf(false) }
+    val pins by getUserPins(userId).collectAsState(initial = emptyList())
 
     //pick image from gallery for profile pic
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -219,11 +224,10 @@ fun ProfileScreen(imageHandler: ImageHandler) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Placeholder for Pins count
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(text = "Placeholder for boxes")
+                    LazyRow {
+                        items(pins) { pin ->
+                            PinCard(pin)
+                        }
                     }
                 }
             }
@@ -293,6 +297,15 @@ fun updateUserProfilePicture(userId: String, profilePictureUrl: String, onSucces
         .addOnFailureListener {
             // Handle any failure in updating the Firestore document
         }
+}
+
+fun getUserPins(userId: String): Flow<List<MapPin>> = flow {
+    val pins = FirebaseFirestore.getInstance().collection("pins")
+        .whereEqualTo("creatorUserId", userId)
+        .get()
+        .await()
+        .toObjects(MapPin::class.java)
+    emit(pins)
 }
 
 @Composable

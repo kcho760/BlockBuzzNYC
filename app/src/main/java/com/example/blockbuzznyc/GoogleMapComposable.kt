@@ -279,7 +279,7 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                                 photoUrl = "",
                                 creatorUsername = pincreatorUsername // Correct this line
                             )
-                            imageUri?.let { uri ->
+                            imageUri.let { uri ->
                                 googleMapInstance?.let { googleMap ->
                                     currentLatLngInstance?.let { currentLatLng ->
                                         confirmAndCreatePin(mapPin, uri, googleMap, currentLatLng ) { success ->
@@ -318,55 +318,65 @@ fun zoomOutMap(googleMap: GoogleMap?) {
     }
 }
 
-fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, googleMap: GoogleMap, currentLatLng: LatLng, onComplete: (Boolean) -> Unit) {
+// Function to confirm and create a pin
+fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri?, googleMap: GoogleMap, currentLatLng: LatLng, onComplete: (Boolean) -> Unit) {
     val storageRef = Firebase.storage.reference
-    val imageRef = storageRef.child("pin_images/${imageUri.lastPathSegment}")
-    val uploadTask = imageRef.putFile(imageUri)
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-    uploadTask.addOnSuccessListener { taskSnapshot ->
-        taskSnapshot.storage.downloadUrl.addOnSuccessListener { downloadUri ->
-            val updatedMapPin = mapPin.copy(
-                photoUrl = downloadUri.toString(),
-                creatorUserId = userId // Set the creatorUserId here
-            )
-            savePinToFirestore(updatedMapPin, userId) { success, newPinId ->
-                if (success) {
-                    updatedMapPin.id = newPinId // Update the mapPin object with the new ID
-                    fetchAndDisplayPins(googleMap, currentLatLng)
-                    onComplete(true)
-                } else {
-                    onComplete(false)
-                }
+    val defaultPhotoUrl = "https://firebasestorage.googleapis.com/v0/b/blockbuzznyc.appspot.com/o/pin_images%2Fnew_york_default.jpg?alt=media&token=a7d9a010-22fc-4c9d-8f98-5971c03e0427"
+
+    if (imageUri == null || imageUri.toString().startsWith("gs://")) {
+        // Use default photo URL if no image is selected or if the imageUri is a direct Firebase Storage reference
+        val updatedMapPin = mapPin.copy(photoUrl = defaultPhotoUrl, creatorUserId = userId)
+        savePinToFirestore(updatedMapPin, userId) { success, newPinId ->
+            if (success) {
+                updatedMapPin.id = newPinId
+                fetchAndDisplayPins(googleMap, currentLatLng)
+                onComplete(true)
+            } else {
+                onComplete(false)
             }
-        }.addOnFailureListener {
-            onComplete(false)
         }
-    }.addOnFailureListener {
-        onComplete(false)
+    } else {
+        // Handle the case where a new image needs to be uploaded
+        val imageRef = storageRef.child("pin_images/${imageUri.lastPathSegment}")
+        val uploadTask = imageRef.putFile(imageUri)
+
+        uploadTask.addOnSuccessListener { taskSnapshot ->
+            taskSnapshot.storage.downloadUrl.addOnSuccessListener { downloadUri ->
+                val updatedMapPin = mapPin.copy(photoUrl = downloadUri.toString(), creatorUserId = userId)
+                savePinToFirestore(updatedMapPin, userId) { success, newPinId ->
+                    if (success) {
+                        updatedMapPin.id = newPinId
+                        fetchAndDisplayPins(googleMap, currentLatLng)
+                        onComplete(true)
+                    } else {
+                        onComplete(false)
+                    }
+                }
+            }.addOnFailureListener { onComplete(false) }
+        }.addOnFailureListener { onComplete(false) }
     }
 }
-
-
 
 fun savePinToFirestore(mapPin: MapPin, userId: String, onComplete: (Boolean, String) -> Unit) {
     val db = Firebase.firestore
     val userRef = db.collection("users").document(userId)
-    val newPinRef = db.collection("pins").document() // Correctly creating a new document reference
+    val newPinRef = db.collection("pins").document()
 
     db.runTransaction { transaction ->
         val userSnapshot = transaction.get(userRef)
-        val currentPinCount = userSnapshot.getLong("numberOfPins") ?: 0
+        val newPinCount = (userSnapshot.getLong("numberOfPins") ?: 0) + 1
 
         val updatedMapPin = mapPin.apply {
             creatorUserId = userId
-            id = newPinRef.id // Correctly setting the ID
+            id = newPinRef.id
         }
-        transaction.set(newPinRef, updatedMapPin) // Correctly saving the pin
-        transaction.update(userRef, "numberOfPins", currentPinCount + 1)
+        transaction.set(newPinRef, updatedMapPin)
+        transaction.update(userRef, "numberOfPins", newPinCount)
     }.addOnSuccessListener {
         onComplete(true, newPinRef.id)
-    }.addOnFailureListener {
+    }.addOnFailureListener { e ->
         onComplete(false, "")
     }
 }
