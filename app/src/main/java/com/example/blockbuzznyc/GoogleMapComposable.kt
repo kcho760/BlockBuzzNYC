@@ -47,7 +47,6 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
 
@@ -254,7 +253,7 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                             imageUri?.let { uri ->
                                 googleMapInstance?.let { googleMap ->
                                     currentLatLngInstance?.let { currentLatLng ->
-                                        confirmAndCreatePin(mapPin, uri, googleMap, currentLatLng) { success ->
+                                        confirmAndCreatePin(mapPin, uri, googleMap, currentLatLng,pincreatorUsername ) { success ->
                                             if (success) {
                                                 Log.d("MapPin", "Pin created successfully")
                                                 // Refresh pins here if needed
@@ -290,39 +289,32 @@ fun zoomOutMap(googleMap: GoogleMap?) {
     }
 }
 
-fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, googleMap: GoogleMap, currentLatLng: LatLng, onComplete: (Boolean) -> Unit) {
+fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, googleMap: GoogleMap, currentLatLng: LatLng, username: String, onComplete: (Boolean) -> Unit) {
     val storageRef = Firebase.storage.reference
     val imageRef = storageRef.child("pin_images/${imageUri.lastPathSegment}")
     val uploadTask = imageRef.putFile(imageUri)
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-    fun fetchUsername(userId: String, onUsernameFetched: (String) -> Unit) {
-        val db = Firebase.firestore
-        db.collection("users").document(userId).get()
-            .addOnSuccessListener { document ->
-                val username = document.getString("username") ?: ""
-                onUsernameFetched(username)
-            }
-            .addOnFailureListener {
-                // Handle failure, maybe use a default value or an error placeholder
-                onUsernameFetched("Unknown User")
-            }
-    }
+    Log.d("MapPin", "User ID: $userId")
+
     uploadTask.addOnSuccessListener { taskSnapshot ->
-        Log.d("MapPin", "confirmAndCreatePin called with URI: $imageUri")
+        Log.d("MapPin", "Image uploaded with URI: $imageUri")
         taskSnapshot.storage.downloadUrl.addOnSuccessListener { downloadUri ->
-            fetchUsername(userId) { username ->
-                val newMapPin = mapPin.copy(
-                    photoUrl = downloadUri.toString(),
-                    creatorUsername = username // Set the username here
-                )
-            savePinToFirestore(newMapPin).addOnSuccessListener {
-                fetchAndDisplayPins(googleMap, currentLatLng)
+            Log.d("MapPin", "Download URL retrieved: $downloadUri")
+            val newMapPin = mapPin.copy(
+                photoUrl = downloadUri.toString(),
+                creatorUserId = userId, // This should be set
+                creatorUsername = username // Make sure username is also set
+            )
+
+            Log.d("MapPin", "New MapPin: $newMapPin")
+
+            savePinToFirestore(newMapPin,userId).addOnSuccessListener {
                 Log.d("MapPin", "Pin saved successfully")
+                fetchAndDisplayPins(googleMap, currentLatLng)
                 onComplete(true)
             }.addOnFailureListener { e ->
                 Log.e("MapPin", "Error saving pin to Firestore", e)
                 onComplete(false)
-            }
             }
         }.addOnFailureListener { e ->
             Log.e("MapPin", "Error getting download URL", e)
@@ -334,16 +326,33 @@ fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, googleMap: GoogleMap, cur
     }
 }
 
-fun savePinToFirestore(mapPin: MapPin): Task<DocumentReference> {
+
+fun savePinToFirestore(mapPin: MapPin, userId: String): Task<Unit> {
     val db = Firebase.firestore
-    return db.collection("pins").add(mapPin)
+    val pinRef = db.collection("pins").document()
+    val userRef = db.collection("users").document(userId)
+
+    // Start a transaction to save the pin and update the user's pin count
+    return db.runTransaction { transaction ->
+        // First, read the user document to get the current pin count
+        val userSnapshot = transaction.get(userRef)
+        val newPinCount = (userSnapshot.getLong("numberOfPins") ?: 0) + 1
+        transaction.update(userRef, "numberOfPins", newPinCount)
+
+        // Add the pin to the pins collection
+        transaction.set(pinRef, mapPin)
+
+        // Indicate that the transaction returns Unit
+        Unit
+    }
         .addOnSuccessListener {
-            Log.d("Firestore", "Pin saved successfully with ID: ${it.id}")
+            Log.d("Firestore", "Pin saved successfully and user pin count updated")
         }
         .addOnFailureListener { e ->
-            Log.e("Firestore", "Error saving pin to Firestore", e)
+            Log.e("Firestore", "Error in transaction", e)
         }
 }
+
 
 data class PinInfo(
     val description: String,

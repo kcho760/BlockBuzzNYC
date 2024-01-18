@@ -55,7 +55,8 @@ import kotlinx.coroutines.tasks.await
 data class User(
     val userId: String = "",
     val username: String = "",
-    val profilePictureUrl: String? = null // Nullable if you want to allow users without a profile picture
+    val profilePictureUrl: String? = null, // Nullable if you want to allow users without a profile picture
+    val numberOfPins: Int = 0,
 )
 
 @Composable
