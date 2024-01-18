@@ -185,12 +185,12 @@ fun ProfileScreen(imageHandler: ImageHandler) {
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Placeholder for Pins count
+                    // Display the actual Pins count
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(text = "0")
+                        Text(text = user.numberOfPins.toString()) // Use the actual pin count from user object
                         Text(text = "Pins")
                     }
 
