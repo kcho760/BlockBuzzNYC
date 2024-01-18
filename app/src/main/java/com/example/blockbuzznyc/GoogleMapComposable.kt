@@ -44,9 +44,9 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
 
@@ -56,7 +56,7 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
     var showDialog by remember { mutableStateOf(false) }
     var pinTitle by remember { mutableStateOf("") }
     var pinDescription by remember { mutableStateOf("") }
-    val pincreatorUsername by remember { mutableStateOf("") }
+    var pincreatorUsername by remember { mutableStateOf("") }
     var selectedLatLng: LatLng? by remember { mutableStateOf(null) }
     var mapViewInstance: MapView? by remember { mutableStateOf(null) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
@@ -71,7 +71,19 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
     var selectedMapPin: MapPin? by remember { mutableStateOf(null) }
     var googleMapInstance: GoogleMap? by remember { mutableStateOf(null) }
     var currentLatLngInstance: LatLng? by remember { mutableStateOf(null) }
-
+    fun fetchCurrentUserUsername(onResult: (String) -> Unit) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        FirebaseFirestore.getInstance().collection("users").document(userId)
+            .get()
+            .addOnSuccessListener { documentSnapshot ->
+                val username = documentSnapshot.getString("username") ?: "Anonymous"
+                onResult(username)
+            }
+            .addOnFailureListener {
+                Log.e("GoogleMapComposable", "Error fetching user data", it)
+                onResult("Anonymous") // Fallback username
+            }
+    }
 
     // Check and update permission status
     LaunchedEffect(Unit) {
@@ -103,22 +115,22 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
         googleMap.setOnMarkerClickListener { marker ->
             val pinInfo = marker.tag as? PinInfo
             pinInfo?.let {
-                selectedMapPin = marker.title?.let { it1 ->
-                    MapPin(
-                        title = it1,
-                        description = it.description,
-                        creatorUsername = it.creatorUsername,
-                        latitude = marker.position.latitude,
-                        longitude = marker.position.longitude,
-                        photoUrl = it.photoUrl,
-                    )
-                }
-                Log.d(selectedMapPin.toString(), "selectedMapPin username $selectedMapPin")
+                selectedMapPin = MapPin(
+                    title = marker.title ?: "",
+                    description = it.description,
+                    creatorUsername = it.creatorUsername,
+                    creatorUserId = it.creatorUserId,
+                    latitude = marker.position.latitude,
+                    longitude = marker.position.longitude,
+                    photoUrl = it.photoUrl,
+                    id = it.id
+                )
                 showPinInfoDialog = true
             }
-            true  // Return true to indicate that we have handled the event
+            true
         }
     }
+
 
     fun recenterMap(googleMap: GoogleMap) {
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
@@ -196,13 +208,32 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
     }
 
     if (showPinInfoDialog) {
-        PinInfoDialog(mapPin = selectedMapPin) {
-            showPinInfoDialog = false
-            selectedMapPin = null
+        FirebaseAuth.getInstance().currentUser?.uid?.let { currentUserUid ->
+            PinInfoDialog(
+                mapPin = selectedMapPin,
+                currentUser = currentUserUid,
+                onDismiss = { showPinInfoDialog = false },
+                onDelete = { pinToDelete ->
+                    deletePin(pinToDelete) {
+                        // Close the dialog
+                        showPinInfoDialog = false
+                        // Refresh the map
+                        googleMapInstance?.let { map ->
+                            currentLatLngInstance?.let { latLng ->
+                                fetchAndDisplayPins(map, latLng)
+                            }
+                        }
+                    }
+                }
+            )
         }
     }
 
+
     if (showDialog) {
+        fetchCurrentUserUsername { username ->
+            pincreatorUsername = username
+        }
         AlertDialog(
             onDismissRequest = { showDialog = false },
             title = { Text("Create a Pin") },
@@ -253,7 +284,7 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                             imageUri?.let { uri ->
                                 googleMapInstance?.let { googleMap ->
                                     currentLatLngInstance?.let { currentLatLng ->
-                                        confirmAndCreatePin(mapPin, uri, googleMap, currentLatLng,pincreatorUsername ) { success ->
+                                        confirmAndCreatePin(mapPin, uri, googleMap, currentLatLng ) { success ->
                                             if (success) {
                                                 Log.d("MapPin", "Pin created successfully")
                                                 // Refresh pins here if needed
@@ -289,76 +320,69 @@ fun zoomOutMap(googleMap: GoogleMap?) {
     }
 }
 
-fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, googleMap: GoogleMap, currentLatLng: LatLng, username: String, onComplete: (Boolean) -> Unit) {
+fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri, googleMap: GoogleMap, currentLatLng: LatLng, onComplete: (Boolean) -> Unit) {
     val storageRef = Firebase.storage.reference
     val imageRef = storageRef.child("pin_images/${imageUri.lastPathSegment}")
     val uploadTask = imageRef.putFile(imageUri)
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-    Log.d("MapPin", "User ID: $userId")
 
     uploadTask.addOnSuccessListener { taskSnapshot ->
-        Log.d("MapPin", "Image uploaded with URI: $imageUri")
         taskSnapshot.storage.downloadUrl.addOnSuccessListener { downloadUri ->
-            Log.d("MapPin", "Download URL retrieved: $downloadUri")
-            val newMapPin = mapPin.copy(
+            val updatedMapPin = mapPin.copy(
                 photoUrl = downloadUri.toString(),
-                creatorUserId = userId, // This should be set
-                creatorUsername = username // Make sure username is also set
+                creatorUserId = userId // Set the creatorUserId here
             )
-
-            Log.d("MapPin", "New MapPin: $newMapPin")
-
-            savePinToFirestore(newMapPin,userId).addOnSuccessListener {
-                Log.d("MapPin", "Pin saved successfully")
-                fetchAndDisplayPins(googleMap, currentLatLng)
-                onComplete(true)
-            }.addOnFailureListener { e ->
-                Log.e("MapPin", "Error saving pin to Firestore", e)
-                onComplete(false)
+            savePinToFirestore(updatedMapPin, userId) { success, newPinId ->
+                if (success) {
+                    updatedMapPin.id = newPinId // Update the mapPin object with the new ID
+                    fetchAndDisplayPins(googleMap, currentLatLng)
+                    onComplete(true)
+                } else {
+                    onComplete(false)
+                }
             }
-        }.addOnFailureListener { e ->
-            Log.e("MapPin", "Error getting download URL", e)
+        }.addOnFailureListener {
             onComplete(false)
         }
-    }.addOnFailureListener { e ->
-        Log.e("MapPin", "Error uploading image", e)
+    }.addOnFailureListener {
         onComplete(false)
     }
 }
 
 
-fun savePinToFirestore(mapPin: MapPin, userId: String): Task<Unit> {
-    val db = Firebase.firestore
-    val pinRef = db.collection("pins").document()
-    val userRef = db.collection("users").document(userId)
 
-    // Start a transaction to save the pin and update the user's pin count
-    return db.runTransaction { transaction ->
-        // First, read the user document to get the current pin count
+fun savePinToFirestore(mapPin: MapPin, userId: String, onComplete: (Boolean, String) -> Unit) {
+    val db = Firebase.firestore
+    val userRef = db.collection("users").document(userId)
+    val newPinRef = db.collection("pins").document() // Correctly creating a new document reference
+
+    db.runTransaction { transaction ->
         val userSnapshot = transaction.get(userRef)
         val newPinCount = (userSnapshot.getLong("numberOfPins") ?: 0) + 1
-        transaction.update(userRef, "numberOfPins", newPinCount)
 
-        // Add the pin to the pins collection
-        transaction.set(pinRef, mapPin)
-
-        // Indicate that the transaction returns Unit
-        Unit
+        val updatedMapPin = mapPin.apply {
+            creatorUserId = userId
+            id = newPinRef.id // Correctly setting the ID
+        }
+        transaction.set(newPinRef, updatedMapPin) // Correctly saving the pin
+        // ...existing transaction code...
+    }.addOnSuccessListener {
+        onComplete(true, newPinRef.id)
+    }.addOnFailureListener {
+        onComplete(false, "")
     }
-        .addOnSuccessListener {
-            Log.d("Firestore", "Pin saved successfully and user pin count updated")
-        }
-        .addOnFailureListener { e ->
-            Log.e("Firestore", "Error in transaction", e)
-        }
 }
+
 
 
 data class PinInfo(
     val description: String,
     val creatorUsername: String,
-    val photoUrl: String
+    val creatorUserId: String, // Add this
+    val photoUrl: String,
+    val id: String
 )
+
 
 fun fetchAndDisplayPins(googleMap: GoogleMap, currentLocation: LatLng) {
     googleMap.clear()
@@ -367,22 +391,27 @@ fun fetchAndDisplayPins(googleMap: GoogleMap, currentLocation: LatLng) {
         .get()
         .addOnSuccessListener { documents ->
             for (document in documents) {
-                val mapPin = document.toObject(MapPin::class.java)
+                val mapPin = document.toObject(MapPin::class.java).apply {
+                    id = document.id // Ensure this line is correctly setting the document ID
+                }
                 val pinLocation = LatLng(mapPin.latitude, mapPin.longitude)
 
                 // Check if the pin is within a certain distance of the current location
                 if (distanceBetweenPoints(currentLocation, pinLocation) <= 200) {
                     // Add the marker to the map
                     val marker = googleMap.addMarker(
-                        MarkerOptions().position(LatLng(mapPin.latitude, mapPin.longitude)).title(mapPin.title)
+                        MarkerOptions().position(pinLocation).title(mapPin.title)
                     )
-
-                    // Set the custom object as a tag for the marker
                     marker?.tag = PinInfo(
                         description = mapPin.description,
                         creatorUsername = mapPin.creatorUsername,
-                        photoUrl = mapPin.photoUrl
+                        creatorUserId = mapPin.creatorUserId, // Set this value
+                        photoUrl = mapPin.photoUrl,
+                        id = mapPin.id
                     )
+
+                    Log.d("MapPin", "Fetched pin with ID: ${mapPin.id}")
+
                     marker?.showInfoWindow()
                 }
             }
