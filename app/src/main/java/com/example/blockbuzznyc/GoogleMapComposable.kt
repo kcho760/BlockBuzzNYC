@@ -215,9 +215,7 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                 onDismiss = { showPinInfoDialog = false },
                 onDelete = { pinToDelete ->
                     deletePin(pinToDelete) {
-                        // Close the dialog
                         showPinInfoDialog = false
-                        // Refresh the map
                         googleMapInstance?.let { map ->
                             currentLatLngInstance?.let { latLng ->
                                 fetchAndDisplayPins(map, latLng)
@@ -358,14 +356,14 @@ fun savePinToFirestore(mapPin: MapPin, userId: String, onComplete: (Boolean, Str
 
     db.runTransaction { transaction ->
         val userSnapshot = transaction.get(userRef)
-        val newPinCount = (userSnapshot.getLong("numberOfPins") ?: 0) + 1
+        val currentPinCount = userSnapshot.getLong("numberOfPins") ?: 0
 
         val updatedMapPin = mapPin.apply {
             creatorUserId = userId
             id = newPinRef.id // Correctly setting the ID
         }
         transaction.set(newPinRef, updatedMapPin) // Correctly saving the pin
-        // ...existing transaction code...
+        transaction.update(userRef, "numberOfPins", currentPinCount + 1)
     }.addOnSuccessListener {
         onComplete(true, newPinRef.id)
     }.addOnFailureListener {
