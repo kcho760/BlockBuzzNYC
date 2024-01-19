@@ -68,7 +68,7 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
     val context = LocalContext.current
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     var showPinInfoDialog by remember { mutableStateOf(false) }
-    var selectedMapPin: MapPin? by remember { mutableStateOf(null) }
+    var selectedMapPin by remember { mutableStateOf<MapPin?>(null) }
     var googleMapInstance: GoogleMap? by remember { mutableStateOf(null) }
     var currentLatLngInstance: LatLng? by remember { mutableStateOf(null) }
     fun fetchCurrentUserUsername(onResult: (String) -> Unit) {
@@ -82,6 +82,20 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
             .addOnFailureListener {
                 Log.e("GoogleMapComposable", "Error fetching user data", it)
                 onResult("Anonymous") // Fallback username
+            }
+    }
+
+    fun fetchUpdatedMapPin(mapPinId: String, onComplete: (MapPin?) -> Unit) {
+        val db = Firebase.firestore
+        db.collection("pins").document(mapPinId)
+            .get()
+            .addOnSuccessListener { documentSnapshot ->
+                val updatedMapPin = documentSnapshot.toObject(MapPin::class.java)
+                onComplete(updatedMapPin)
+            }
+            .addOnFailureListener { e ->
+                Log.e("GoogleMapComposable", "Error fetching updated pin", e)
+                onComplete(null) // Handle the failure case
             }
     }
 
@@ -125,12 +139,18 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                     photoUrl = it.photoUrl,
                     id = it.id
                 )
-                showPinInfoDialog = true
+                selectedMapPin?.id?.let { mapPinId ->
+                    fetchUpdatedMapPin(mapPinId) { updatedMapPin ->
+                        updatedMapPin?.let {
+                            selectedMapPin = it
+                            showPinInfoDialog = true
+                        }
+                    }
+                }
             }
             true
         }
     }
-
 
     fun recenterMap(googleMap: GoogleMap) {
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
@@ -140,6 +160,7 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
             }
         }
     }
+
 
     Box {
         Column{
@@ -209,23 +230,33 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
 
     if (showPinInfoDialog) {
         FirebaseAuth.getInstance().currentUser?.uid?.let { currentUserUid ->
-            PinInfoDialog(
-                mapPin = selectedMapPin,
-                currentUser = currentUserUid,
-                onDismiss = { showPinInfoDialog = false },
-                onDelete = { pinToDelete ->
-                    deletePin(pinToDelete) {
+            selectedMapPin?.let { pin ->
+                PinInfoDialog(
+                    mapPin = pin,
+                    currentUser = currentUserUid,
+                    onDismiss = {
                         showPinInfoDialog = false
-                        googleMapInstance?.let { map ->
-                            currentLatLngInstance?.let { latLng ->
-                                fetchAndDisplayPins(map, latLng)
+                    },
+                    onDelete = { pinToDelete ->
+                        deletePin(pinToDelete) {
+                            showPinInfoDialog = false
+                            googleMapInstance?.let { map ->
+                                currentLatLngInstance?.let { latLng ->
+                                    fetchAndDisplayPins(map, latLng)
+                                }
                             }
                         }
+                    },
+                    onLikeToggle = {toggleLikeOnPin(pin, currentUserUid) { updatedPin ->
+                            selectedMapPin = updatedPin
+                        }
                     }
-                }
-            )
+
+                )
+            }
         }
     }
+
 
 
     if (showDialog) {
@@ -376,7 +407,7 @@ fun savePinToFirestore(mapPin: MapPin, userId: String, onComplete: (Boolean, Str
         transaction.update(userRef, "numberOfPins", newPinCount)
     }.addOnSuccessListener {
         onComplete(true, newPinRef.id)
-    }.addOnFailureListener { e ->
+    }.addOnFailureListener {
         onComplete(false, "")
     }
 }

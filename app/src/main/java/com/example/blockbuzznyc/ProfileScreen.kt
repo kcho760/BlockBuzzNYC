@@ -61,6 +61,7 @@ data class User(
     val username: String = "",
     val profilePictureUrl: String? = null, // Nullable if you want to allow users without a profile picture
     val numberOfPins: Int = 0,
+    val totalLikes: Int = 0
 )
 
 @Composable
@@ -191,22 +192,10 @@ fun ProfileScreen(imageHandler: ImageHandler) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Display the actual Pins count
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(text = user.numberOfPins.toString()) // Use the actual pin count from user object
-                        Text(text = "Pins")
-                    }
+                    CountSection(count = user.numberOfPins, label = "Pins")
 
-                    // Placeholder for Likes count
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(text = "0")
-                        Text(text = "Likes")
-                    }
+                    // Display the actual Likes count
+                    CountSection(count = user.totalLikes, label = "Likes") // Updated to use totalLikes
                 }
             }
             Box(

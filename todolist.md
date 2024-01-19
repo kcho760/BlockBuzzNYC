@@ -5,7 +5,7 @@ Features
     -Main screen ui
         ~~map page~~
         profile page (work in progress)
-            -add users pins as box
+            ~~-add users pins as box~~
             -add users total likes
             -achievements
         search page

@@ -8,5 +8,6 @@ data class MapPin(
     val longitude: Double = 0.0,
     val photoUrl: String = "",
     var creatorUserId: String = "",
-    val creatorUsername: String = ""
+    val creatorUsername: String = "",
+    val likes: List<String> = listOf()
 )
