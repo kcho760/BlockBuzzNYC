@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -31,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -71,6 +74,10 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
     var selectedMapPin by remember { mutableStateOf<MapPin?>(null) }
     var googleMapInstance: GoogleMap? by remember { mutableStateOf(null) }
     var currentLatLngInstance: LatLng? by remember { mutableStateOf(null) }
+    var selectedTags by remember { mutableStateOf<List<String>>(emptyList()) }
+    val availableTags = listOf("Food", "Art", "Other", "Nature", "Entertainment") // Example tag list
+
+
     fun fetchCurrentUserUsername(onResult: (String) -> Unit) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         FirebaseFirestore.getInstance().collection("users").document(userId)
@@ -137,7 +144,8 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                     latitude = marker.position.latitude,
                     longitude = marker.position.longitude,
                     photoUrl = it.photoUrl,
-                    id = it.id
+                    id = it.id,
+                    tags = it.tags
                 )
                 selectedMapPin?.id?.let { mapPinId ->
                     fetchUpdatedMapPin(mapPinId) { updatedMapPin ->
@@ -295,6 +303,31 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                             contentScale = ContentScale.Fit // Adjust the scaling to fit the size while maintaining the aspect ratio
                         )
                     }
+                    Text(
+                        "Select Tags (up to 3):",
+                        color = Color.Black // Set the text color to black
+                    )
+                    availableTags.forEach { tag ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = selectedTags.contains(tag),
+                                onCheckedChange = { checked ->
+                                    if (checked) {
+                                        if (selectedTags.size < 3) {
+                                            selectedTags = selectedTags + tag
+                                        }
+                                    } else {
+                                        selectedTags = selectedTags - tag
+                                    }
+                                }
+                            )
+                            Text(
+                                text = tag,
+                                color = Color.Black // Set the text color to black
+                            )
+                        }
+                    }
+
                 }
             },
             confirmButton = {
@@ -308,7 +341,8 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                                 latitude = latLng.latitude,
                                 longitude = latLng.longitude,
                                 photoUrl = "",
-                                creatorUsername = pincreatorUsername // Correct this line
+                                creatorUsername = pincreatorUsername,
+                                tags = selectedTags
                             )
                             imageUri.let { uri ->
                                 googleMapInstance?.let { googleMap ->
@@ -419,7 +453,8 @@ data class PinInfo(
     val creatorUsername: String,
     val creatorUserId: String, // Add this
     val photoUrl: String,
-    val id: String
+    val id: String,
+    val tags: List<String>
 )
 
 
@@ -446,7 +481,8 @@ fun fetchAndDisplayPins(googleMap: GoogleMap, currentLocation: LatLng) {
                         creatorUsername = mapPin.creatorUsername,
                         creatorUserId = mapPin.creatorUserId, // Set this value
                         photoUrl = mapPin.photoUrl,
-                        id = mapPin.id
+                        id = mapPin.id,
+                        tags = mapPin.tags
                     )
 
                     Log.d("MapPin", "Fetched pin with ID: ${mapPin.id}")

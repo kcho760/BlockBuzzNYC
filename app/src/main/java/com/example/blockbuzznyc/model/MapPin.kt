@@ -9,5 +9,6 @@ data class MapPin(
     val photoUrl: String = "",
     var creatorUserId: String = "",
     val creatorUsername: String = "",
-    val likes: List<String> = listOf()
+    val likes: List<String> = listOf(),
+    val tags: List<String> = listOf()
 )

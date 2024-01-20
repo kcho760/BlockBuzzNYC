@@ -13,6 +13,7 @@ Features
             -search functionality
             -recently created pins
     -enhance pins
+        ~~profile picture~~
         tags
         comments
         ~~likes~~

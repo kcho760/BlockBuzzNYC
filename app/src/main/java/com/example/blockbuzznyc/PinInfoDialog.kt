@@ -2,15 +2,19 @@ package com.example.blockbuzznyc
 
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.blockbuzznyc.model.MapPin
@@ -69,6 +74,25 @@ fun PinInfoDialog(
                         text = mapPin.title,
                         style = MaterialTheme.typography.headlineSmall.copy(color = Color.Black)
                     )
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Row {
+                        mapPin.tags.forEach { tag ->
+                            Surface(
+                                shape = RoundedCornerShape(50), // Circular shape
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) // Translucent background
+                            ) {
+                                Text(
+                                    text = tag,
+                                    modifier = Modifier
+                                        .padding(horizontal = 8.dp, vertical = 4.dp) // Padding inside the bubble
+                                        .border(1.dp, Color.LightGray, RoundedCornerShape(50)), // Border to create bubble effect
+                                    textAlign = TextAlign.Center,
+                                    style = MaterialTheme.typography.bodySmall.copy(color = Color.Black)
+                                )
+                            }
+                            Spacer(modifier = Modifier.size(4.dp)) // Space between bubbles
+                        }
+                    }
                 }
             },
             text = {
@@ -92,8 +116,10 @@ fun PinInfoDialog(
                         style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
                     )
                     // Add Like button here within the content
-                    Button(onClick = { onLikeToggle(mapPin) }) {
-                        Text(likeButtonText)
+                    if (mapPin.creatorUserId != currentUser) {
+                        Button(onClick = { onLikeToggle(mapPin) }) {
+                            Text(likeButtonText)
+                        }
                     }
                 }
             },
@@ -131,6 +157,9 @@ fun toggleLikeOnPin(mapPin: MapPin, currentUser: String, onUpdated: (MapPin) -> 
     val db = Firebase.firestore
     val pinRef = db.collection("pins").document(mapPin.id)
     val userRef = db.collection("users").document(mapPin.creatorUserId) // Reference to the pin creator's user document
+    if (mapPin.creatorUserId == currentUser) {
+        return // Do nothing if the currentUser is the creator
+    }
 
     val newLikes = if (currentUser in mapPin.likes) {
         mapPin.likes - currentUser // Remove like
