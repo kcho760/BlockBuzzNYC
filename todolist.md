@@ -6,7 +6,8 @@ Features
         ~~map page~~
         profile page (work in progress)
             ~~-add users pins as box~~
-            -add users total likes
+            ~~-add users total likes~~
+            ~~-add user pins~~
             -achievements
         search page
             -search functionality

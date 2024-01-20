@@ -189,7 +189,7 @@ fun ProfileScreen(imageHandler: ImageHandler) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     // Display the actual Pins count
                     CountSection(count = user.numberOfPins, label = "Pins")

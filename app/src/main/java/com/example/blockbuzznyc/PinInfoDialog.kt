@@ -3,19 +3,31 @@ package com.example.blockbuzznyc
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.blockbuzznyc.model.MapPin
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.tasks.await
 
 @Composable
 fun PinInfoDialog(
@@ -25,7 +37,14 @@ fun PinInfoDialog(
     onDelete: (MapPin) -> Unit,
     onLikeToggle: (MapPin) -> Unit
 ) {
+    var creatorProfilePictureUrl by remember { mutableStateOf<String?>(null) }
+
     if (mapPin != null) {
+        LaunchedEffect(key1 = mapPin.creatorUserId) {
+            val user = getUserProfile(mapPin.creatorUserId)
+            creatorProfilePictureUrl = user?.profilePictureUrl
+        }
+
         val isLiked = mapPin.likes.contains(currentUser)
         val likeButtonText = if (isLiked) "Unlike" else "Like"
         val likesCount = mapPin.likes.size
@@ -33,13 +52,28 @@ fun PinInfoDialog(
         AlertDialog(
             onDismissRequest = onDismiss,
             title = {
-                Text(
-                    text = mapPin.title,
-                    style = MaterialTheme.typography.headlineSmall.copy(color = Color.Black)
-                )
+                Row {
+                    if (creatorProfilePictureUrl != null) {
+                        Image(
+                            painter = rememberAsyncImagePainter(model = creatorProfilePictureUrl),
+                            contentDescription = "Creator Profile Picture",
+                            modifier = Modifier
+                                .size(40.dp) // Set the size of the image
+                                .clip(CircleShape) // Clip the image to a circle
+                                .fillMaxSize(), // This will make sure the image fills the circle
+                            contentScale = ContentScale.Crop // This will crop the image to fit the circle while maintaining the aspect ratio
+                        )
+                    }
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(
+                        text = mapPin.title,
+                        style = MaterialTheme.typography.headlineSmall.copy(color = Color.Black)
+                    )
+                }
             },
             text = {
                 Column {
+
                     Text(
                         text = "By ${mapPin.creatorUsername}",
                         style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
@@ -138,4 +172,10 @@ fun toggleLikeOnPin(mapPin: MapPin, currentUser: String, onUpdated: (MapPin) -> 
         Log.e("MapPin", "Error toggling pin like or updating totalLikes.", it)
         // Optionally: Handle failure (e.g., rollback optimistic UI update)
     }
+}
+
+suspend fun getUserProfile(userId: String): User? {
+    val db = Firebase.firestore
+    return db.collection("users").document(userId).get().await()
+        .toObject(User::class.java)
 }
