@@ -131,8 +131,6 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
     }
 
     fun setupGoogleMap(googleMap: GoogleMap, context: Context) {
-        googleMap.setInfoWindowAdapter(CustomInfoWindowAdapter(context))
-        // Set custom marker click listener
         googleMap.setOnMarkerClickListener { marker ->
             val pinInfo = marker.tag as? PinInfo
             pinInfo?.let {
@@ -486,8 +484,6 @@ fun fetchAndDisplayPins(googleMap: GoogleMap, currentLocation: LatLng) {
                     )
 
                     Log.d("MapPin", "Fetched pin with ID: ${mapPin.id}")
-
-                    marker?.showInfoWindow()
                 }
             }
         }
