@@ -14,7 +14,7 @@ Features
             -recently created pins
     -enhance pins
         ~~profile picture~~
-        tags
+        ~~tags~~
         comments
         ~~likes~~
         ~~delete pins (only for the user)~~

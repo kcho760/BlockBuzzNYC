@@ -130,8 +130,10 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
         return
     }
 
-    fun setupGoogleMap(googleMap: GoogleMap, context: Context) {
+    fun setupGoogleMap(googleMap: GoogleMap) {
         googleMap.setOnMarkerClickListener { marker ->
+            Log.d("GoogleMap", "Marker clicked: ${marker.id}")
+
             val pinInfo = marker.tag as? PinInfo
             pinInfo?.let {
                 selectedMapPin = MapPin(
@@ -177,18 +179,18 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                         mapView.onCreate(null)
                         mapView.getMapAsync { googleMap ->
                             googleMapInstance = googleMap
-                            setupGoogleMap(googleMap, context)
+                            setupGoogleMap(googleMap)
                             val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
                             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                                 location?.let {
                                     val currentLatLng = LatLng(it.latitude, it.longitude)
                                     currentLatLngInstance = currentLatLng
                                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
-                                    fetchAndDisplayPins(googleMap, currentLatLng) // Pass currentLatLng to the function
+                                    fetchAndDisplayPins(googleMap, currentLatLng, context) // Pass currentLatLng to the function
                                 } ?: run {
                                     val defaultLatLng = LatLng(40.7128, -74.0060) // Default to New York City coordinates
                                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 17f))
-                                    fetchAndDisplayPins(googleMap, defaultLatLng) // Pass defaultLatLng to the function
+                                    fetchAndDisplayPins(googleMap, defaultLatLng, context) // Pass defaultLatLng to the function
                                 }
                             }
                             googleMap.setOnMapLongClickListener { latLng ->
@@ -248,7 +250,7 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                             showPinInfoDialog = false
                             googleMapInstance?.let { map ->
                                 currentLatLngInstance?.let { latLng ->
-                                    fetchAndDisplayPins(map, latLng)
+                                    fetchAndDisplayPins(map, latLng, context)
                                 }
                             }
                         }
@@ -345,7 +347,7 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                             imageUri.let { uri ->
                                 googleMapInstance?.let { googleMap ->
                                     currentLatLngInstance?.let { currentLatLng ->
-                                        confirmAndCreatePin(mapPin, uri, googleMap, currentLatLng ) { success ->
+                                        confirmAndCreatePin(mapPin, uri, googleMap, currentLatLng, context) { success ->
                                             if (success) {
                                                 Log.d("MapPin", "Pin created successfully")
                                                 // Refresh pins here if needed
@@ -382,7 +384,7 @@ fun zoomOutMap(googleMap: GoogleMap?) {
 }
 
 // Function to confirm and create a pin
-fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri?, googleMap: GoogleMap, currentLatLng: LatLng, onComplete: (Boolean) -> Unit) {
+fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri?, googleMap: GoogleMap, currentLatLng: LatLng, context: Context, onComplete: (Boolean) -> Unit) {
     val storageRef = Firebase.storage.reference
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
@@ -394,7 +396,7 @@ fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri?, googleMap: GoogleMap, cu
         savePinToFirestore(updatedMapPin, userId) { success, newPinId ->
             if (success) {
                 updatedMapPin.id = newPinId
-                fetchAndDisplayPins(googleMap, currentLatLng)
+                fetchAndDisplayPins(googleMap, currentLatLng, context)
                 onComplete(true)
             } else {
                 onComplete(false)
@@ -411,7 +413,7 @@ fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri?, googleMap: GoogleMap, cu
                 savePinToFirestore(updatedMapPin, userId) { success, newPinId ->
                     if (success) {
                         updatedMapPin.id = newPinId
-                        fetchAndDisplayPins(googleMap, currentLatLng)
+                        fetchAndDisplayPins(googleMap, currentLatLng, context)
                         onComplete(true)
                     } else {
                         onComplete(false)
@@ -456,7 +458,7 @@ data class PinInfo(
 )
 
 
-fun fetchAndDisplayPins(googleMap: GoogleMap, currentLocation: LatLng) {
+fun fetchAndDisplayPins(googleMap: GoogleMap, currentLocation: LatLng, context: Context) {
     googleMap.clear()
     val db = Firebase.firestore
     db.collection("pins")
@@ -470,7 +472,8 @@ fun fetchAndDisplayPins(googleMap: GoogleMap, currentLocation: LatLng) {
 
                 // Check if the pin is within a certain distance of the current location
                 if (distanceBetweenPoints(currentLocation, pinLocation) <= 200) {
-                    // Add the marker to the map
+                    // Use food_pin for all markers for now
+//                    addCustomMarker(googleMap, mapPin, context, R.drawable.food_pin)
                     val marker = googleMap.addMarker(
                         MarkerOptions().position(pinLocation).title(mapPin.title)
                     )
@@ -492,7 +495,6 @@ fun fetchAndDisplayPins(googleMap: GoogleMap, currentLocation: LatLng) {
         }
 }
 
-
 fun distanceBetweenPoints(startLatLng: LatLng, endLatLng: LatLng): Float {
     val results = FloatArray(1)
     Location.distanceBetween(
@@ -502,3 +504,12 @@ fun distanceBetweenPoints(startLatLng: LatLng, endLatLng: LatLng): Float {
     )
     return results[0]
 }
+
+//fun addCustomMarker(googleMap: GoogleMap, mapPin: MapPin, context: Context, iconResId: Int) {
+//    val customIcon = BitmapDescriptorFactory.fromResource(iconResId) // Use the resource ID of the custom icon
+//
+//    val markerOptions = MarkerOptions()
+//        .position(LatLng(mapPin.latitude, mapPin.longitude))
+//        .icon(customIcon) // Set the custom icon here
+//    googleMap.addMarker(markerOptions)
+//}
