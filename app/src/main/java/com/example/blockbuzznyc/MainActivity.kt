@@ -73,13 +73,10 @@ class MainActivity : ComponentActivity() {
         imageHandler = ImageHandler(this, this)
 
         googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            Log.d("SignUp", "Google Sign-In result received")
             if (result.resultCode == Activity.RESULT_OK) {
-                Log.d("SignUp", "Result OK, processing sign-in")
                 val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
                 try {
                     val account = task.getResult(ApiException::class.java)
-                    Log.d("SignUp", "Google Sign-In successful, ID Token: ${account.idToken}")
                     firebaseAuthWithGoogle(account.idToken, navController)
                 } catch (e: ApiException) {
                     Log.d("SignUp", "Google Sign-In failed with code: ${e.statusCode}")
@@ -99,11 +96,9 @@ class MainActivity : ComponentActivity() {
     }
     private fun firebaseAuthWithGoogle(idToken: String?, navController: NavController) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
-        Log.d("SignUp", "NavController Loaded $navController")
         FirebaseAuth.getInstance().signInWithCredential(credential)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    Log.d("SignUp", "signInWithCredential:success")
                     isLoggedIn.value = true
                     navController.navigate("main") {
                         popUpTo("login") { inclusive = true }
@@ -268,7 +263,10 @@ fun MainScreen(
                 enterTransition = { slideInFromRight() },
                 exitTransition = { slideOutToRight() }
             ) {
-                SearchScreen()
+                SearchScreen(onPinSelected = { selectedLocation ->
+                    selectedPinLocation.value = selectedLocation // Use the passed location
+                    navController.navigate("main")
+                })
             }
         }
     }

@@ -156,9 +156,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (LatLng) -> Unit) {
                             uri?.let {
                                 uploadImageToFirebaseStorage(userId, it) { imageUrl ->
                                     updateUserProfilePicture(userId, imageUrl) {
-                                        Log.d("ProfileScreen", "Refresh toggle1: $refreshToggle")
                                         refreshToggle = !refreshToggle
-                                        Log.d("ProfileScreen", "Refresh toggle2: $refreshToggle")
                                     }
                                 }
                             }

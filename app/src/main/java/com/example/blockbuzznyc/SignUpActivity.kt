@@ -116,7 +116,6 @@ private fun registerUser(
     onSignUpSuccessful: () -> Unit,
     onSignUpFailed: (String) -> Unit
 ) {
-    Log.d("SignUp", "Starting user registration")
     // Check if the email is valid
     if (username.isBlank()) {
         onSignUpFailed("Username cannot be empty")
@@ -152,11 +151,9 @@ private fun registerUser(
                     // Save the userId and username to Firestore
                     saveUsernameToFirestore(userId, username, onSignUpSuccessful, onSignUpFailed)
                     // Sign up success, update UI with the signed-in user's information
-                    Log.d("SignUp", "createUserWithEmail:success")
                     onSignUpSuccessful()
                 } else {
                     // If sign up fails, display a message to the user.
-                    Log.w("SignUp", "createUserWithEmail:failure", task.exception)
                     onSignUpFailed(task.exception?.message ?: "Authentication failed.")
                 }
             }

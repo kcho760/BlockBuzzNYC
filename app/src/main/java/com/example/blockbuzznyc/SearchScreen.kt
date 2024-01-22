@@ -31,6 +31,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.blockbuzznyc.model.MapPin
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.ktx.firestore
@@ -38,7 +39,7 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 
 @Composable
-fun SearchScreen() {
+fun SearchScreen(onPinSelected: (LatLng) -> Unit) {
     val availableTags = listOf("Food", "Art", "Other", "Nature", "Entertainment") // Example tag list
     var selectedTags by remember { mutableStateOf(listOf<String>()) }
     var searchResults by remember { mutableStateOf<List<MapPin>>(emptyList()) }
@@ -71,7 +72,10 @@ fun SearchScreen() {
 
         LazyColumn {
             items(searchResults) { pin ->
-                PinItem(pin)
+                PinItem(pin, onClick = {
+                    val location = LatLng(pin.latitude, pin.longitude)
+                    onPinSelected(location)
+                })
             }
         }
     }
@@ -129,11 +133,12 @@ fun TagButton(tag: String, isSelected: Boolean, onSelectionChanged: (Boolean) ->
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun PinItem(pin: MapPin) {
+fun PinItem(pin: MapPin, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
+            .clickable(onClick = onClick)
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
             Column(

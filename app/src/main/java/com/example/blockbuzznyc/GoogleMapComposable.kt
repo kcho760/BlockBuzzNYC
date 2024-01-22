@@ -45,7 +45,6 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.Firebase
@@ -53,7 +52,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
-import com.google.maps.android.compose.rememberCameraPositionState
 
 
 @Composable
@@ -79,9 +77,6 @@ fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?
     var currentLatLngInstance: LatLng? by remember { mutableStateOf(null) }
     var selectedTags by remember { mutableStateOf<List<String>>(emptyList()) }
     val availableTags = listOf("Food", "Art", "Other", "Nature", "Entertainment") //tag list
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(40.7128, -74.0060), 10f) // Default position
-    }
     var isInitialSetupDone by remember { mutableStateOf(false) }
 
     fun fetchCurrentUserUsername(onResult: (String) -> Unit) {
@@ -93,7 +88,6 @@ fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?
                 onResult(username)
             }
             .addOnFailureListener {
-                Log.e("GoogleMapComposable", "Error fetching user data", it)
                 onResult("Anonymous") // Fallback username
             }
     }
@@ -106,17 +100,14 @@ fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?
                 val updatedMapPin = documentSnapshot.toObject(MapPin::class.java)
                 onComplete(updatedMapPin)
             }
-            .addOnFailureListener { e ->
-                Log.e("GoogleMapComposable", "Error fetching updated pin", e)
+            .addOnFailureListener {
                 onComplete(null) // Handle the failure case
             }
     }
 
     LaunchedEffect(isMapReady, selectedPinLocation) {
         if (isMapReady && selectedPinLocation != null) {
-            Log.d("GoogleMapComposable", "Attempting to move camera to: $selectedPinLocation")
             googleMapInstance?.animateCamera(CameraUpdateFactory.newLatLngZoom(selectedPinLocation, 18f))
-            Log.d("GoogleMapComposable", "Camera moved to: $selectedPinLocation Mapready is $isMapReady ")
         } else {
             Log.d("GoogleMapComposable", "Map not ready or location is null: isMapReady = $isMapReady, selectedPinLocation = $selectedPinLocation")
         }
@@ -149,7 +140,6 @@ fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?
 
     fun setupGoogleMap(googleMap: GoogleMap) {
         googleMap.setOnMarkerClickListener { marker ->
-            Log.d("GoogleMap", "Marker clicked: ${marker.id}")
 
             val pinInfo = marker.tag as? PinInfo
             pinInfo?.let {
@@ -510,7 +500,6 @@ fun fetchAndDisplayPins(googleMap: GoogleMap, currentLocation: LatLng, context: 
                     tags = mapPin.tags
                 )
 
-                Log.d("MapPin", "Fetched pin with ID: ${mapPin.id}")
                 // }
             }
         }

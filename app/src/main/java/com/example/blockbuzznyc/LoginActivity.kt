@@ -58,7 +58,6 @@ fun LoginScreen(
         onLoginFailed: (String) -> Unit,
         googleSignInLauncher: ActivityResultLauncher<Intent>
     ) {
-        Log.d("SignUp", "Initiating Google Sign-In")
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken("15720236856-0q14kp2dv3hpvt6go2o831sobep98b08.apps.googleusercontent.com")
@@ -69,8 +68,6 @@ fun LoginScreen(
         val googleSignInClient = GoogleSignIn.getClient(context, gso)
         val signInIntent = googleSignInClient.signInIntent
         googleSignInLauncher.launch(signInIntent)
-
-        Log.d("SignUp", "Google Sign-In Intent launched")
     }
 
     Box(
@@ -163,8 +160,6 @@ fun LoginScreen(
 
 
 fun loginUser(email: String, password: String, onLoginSuccessful: () -> Unit, onLoginFailed: (String) -> Unit) {
-    Log.d("SignUp", "Attempting to log in user: $email")
-
     if (email.isBlank() || password.isBlank()) {
         Log.d("SignUp", "Email or password is blank")
         onLoginFailed("Email and password must not be empty")

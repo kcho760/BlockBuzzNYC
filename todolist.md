@@ -8,6 +8,7 @@ Features
             ~~-add users pins as box~~
             ~~-add users total likes~~
             ~~-add user pins~~
+            ~~-click on pins to move on map~~
             -achievements
         search page
             ~~-search functionality~~
