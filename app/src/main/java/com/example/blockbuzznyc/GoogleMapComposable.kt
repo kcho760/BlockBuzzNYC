@@ -45,6 +45,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.Firebase
@@ -52,15 +53,17 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
+import com.google.maps.android.compose.rememberCameraPositionState
 
 
 @Composable
-fun GoogleMapComposable(imageHandler: ImageHandler) {
+fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?) {
     var showDialog by remember { mutableStateOf(false) }
     var pinTitle by remember { mutableStateOf("") }
     var pinDescription by remember { mutableStateOf("") }
     var pincreatorUsername by remember { mutableStateOf("") }
     var selectedLatLng: LatLng? by remember { mutableStateOf(null) }
+    var isMapReady by remember { mutableStateOf(false) }
     var mapViewInstance: MapView? by remember { mutableStateOf(null) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var hasPermissions by remember { mutableStateOf(false) }
@@ -75,8 +78,11 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
     var googleMapInstance: GoogleMap? by remember { mutableStateOf(null) }
     var currentLatLngInstance: LatLng? by remember { mutableStateOf(null) }
     var selectedTags by remember { mutableStateOf<List<String>>(emptyList()) }
-    val availableTags = listOf("Food", "Art", "Other", "Nature", "Entertainment") // Example tag list
-
+    val availableTags = listOf("Food", "Art", "Other", "Nature", "Entertainment") //tag list
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(LatLng(40.7128, -74.0060), 10f) // Default position
+    }
+    var isInitialSetupDone by remember { mutableStateOf(false) }
 
     fun fetchCurrentUserUsername(onResult: (String) -> Unit) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -105,6 +111,17 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                 onComplete(null) // Handle the failure case
             }
     }
+
+    LaunchedEffect(isMapReady, selectedPinLocation) {
+        if (isMapReady && selectedPinLocation != null) {
+            Log.d("GoogleMapComposable", "Attempting to move camera to: $selectedPinLocation")
+            googleMapInstance?.animateCamera(CameraUpdateFactory.newLatLngZoom(selectedPinLocation, 18f))
+            Log.d("GoogleMapComposable", "Camera moved to: $selectedPinLocation Mapready is $isMapReady ")
+        } else {
+            Log.d("GoogleMapComposable", "Map not ready or location is null: isMapReady = $isMapReady, selectedPinLocation = $selectedPinLocation")
+        }
+    }
+
 
     // Check and update permission status
     LaunchedEffect(Unit) {
@@ -180,19 +197,25 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                         mapView.getMapAsync { googleMap ->
                             googleMapInstance = googleMap
                             setupGoogleMap(googleMap)
-                            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-                            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                                location?.let {
-                                    val currentLatLng = LatLng(it.latitude, it.longitude)
+                            isMapReady = true
+
+                            if (!isInitialSetupDone && selectedPinLocation == null) {
+                                // Initial setup: setting camera position and fetching pins
+                                val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+                                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                                    val currentLatLng = location?.let {
+                                        LatLng(it.latitude, it.longitude)
+                                    } ?: LatLng(40.7128, -74.0060) // Default to New York City if location is null
                                     currentLatLngInstance = currentLatLng
                                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
-                                    fetchAndDisplayPins(googleMap, currentLatLng, context) // Pass currentLatLng to the function
-                                } ?: run {
-                                    val defaultLatLng = LatLng(40.7128, -74.0060) // Default to New York City coordinates
-                                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, 17f))
-                                    fetchAndDisplayPins(googleMap, defaultLatLng, context) // Pass defaultLatLng to the function
+                                    fetchAndDisplayPins(googleMap, currentLatLng, context)
+                                    isInitialSetupDone = true
                                 }
+                            } else if (selectedPinLocation != null) {
+                                // Fetching and displaying pins when a new pin location is selected
+                                fetchAndDisplayPins(googleMap, selectedPinLocation, context)
                             }
+
                             googleMap.setOnMapLongClickListener { latLng ->
                                 selectedLatLng = latLng
                                 showDialog = true
@@ -204,6 +227,8 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                     mapView.onResume()
                 }
             )
+
+
         }
         Column(
             modifier = Modifier
@@ -256,8 +281,8 @@ fun GoogleMapComposable(imageHandler: ImageHandler) {
                         }
                     },
                     onLikeToggle = {toggleLikeOnPin(pin, currentUserUid) { updatedPin ->
-                            selectedMapPin = updatedPin
-                        }
+                        selectedMapPin = updatedPin
+                    }
                     }
 
                 )

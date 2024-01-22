@@ -1,5 +1,6 @@
 package com.example.blockbuzznyc
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,15 +16,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.blockbuzznyc.model.MapPin
+import com.google.android.gms.maps.model.LatLng
 
 @Composable
-fun PinCard(pin: MapPin) {
+fun PinCard(pin: MapPin, onPinSelected: (LatLng) -> Unit) {
     Card(
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .padding(8.dp)
             .height(200.dp) // Fixed height for the card
             .width(150.dp) // Fixed width for the card
+            .clickable {
+                onPinSelected(LatLng(pin.latitude, pin.longitude)) // Use latitude and longitude from the pin
+            } // Assuming `pin.location` is a `LatLng` object
     ) {
         Column {
             AsyncImage(

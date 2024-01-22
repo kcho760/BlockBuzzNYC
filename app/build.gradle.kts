@@ -67,6 +67,7 @@ android {
 }
 
 dependencies {
+    implementation ("com.google.maps.android:maps-compose:2.4.0")
     implementation ("androidx.navigation:navigation-compose:2.7.6")
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")

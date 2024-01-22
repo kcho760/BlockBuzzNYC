@@ -52,6 +52,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.blockbuzznyc.ui.theme.BlockBuzzNYCTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
@@ -64,6 +65,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var imageHandler: ImageHandler
     private lateinit var navController: NavHostController
     private val isLoggedIn = mutableStateOf(FirebaseAuth.getInstance().currentUser != null)
+    private val selectedPinLocation = mutableStateOf<LatLng?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
@@ -90,7 +93,7 @@ class MainActivity : ComponentActivity() {
             navController = rememberNavController()
             val isLoggedIn = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
             BlockBuzzNYCTheme {
-                MainScreen(imageHandler, googleSignInLauncher, this,navController, isLoggedIn)
+                MainScreen(imageHandler, googleSignInLauncher, this, navController, isLoggedIn, selectedPinLocation)
             }
         }
     }
@@ -119,7 +122,8 @@ fun MainScreen(
     googleSignInLauncher: ActivityResultLauncher<Intent>,
     activityContext: Context,
     navController: NavHostController,
-    isLoggedIn: MutableState<Boolean>
+    isLoggedIn: MutableState<Boolean>,
+    selectedPinLocation: MutableState<LatLng?>
 ) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     val username = remember {mutableStateOf("")}
@@ -234,7 +238,8 @@ fun MainScreen(
                 enterTransition = { slideInFromRight() },
                 exitTransition = { slideOutToRight() }
             ) {
-                GoogleMapComposable(imageHandler)
+                GoogleMapComposable(imageHandler, selectedPinLocation = selectedPinLocation.value)
+                Log.d("selectedPinLocation", "${selectedPinLocation.value}")
             }
             composable(
                 "signup") {
@@ -250,7 +255,13 @@ fun MainScreen(
                 enterTransition = { slideInFromLeft() },
                 exitTransition = { slideOutToRight()}
             ) {
-                ProfileScreen(imageHandler)
+                ProfileScreen(
+                    imageHandler = imageHandler,
+                    onPinSelected = { location ->
+                        selectedPinLocation.value = location
+                        navController.navigate("main")
+                    }
+                )
             }
             composable(
                 "search",
