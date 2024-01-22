@@ -13,7 +13,7 @@ Features
         search page
             ~~-search functionality~~
             -recently created pins
-            -click pins to move to location on map
+            ~~-click pins to move to location on map~~
     -enhance pins
         ~~profile picture~~
         ~~tags~~
