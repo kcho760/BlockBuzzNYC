@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -25,7 +27,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.blockbuzznyc.model.MapPin
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.QuerySnapshot
@@ -130,26 +134,37 @@ fun PinItem(pin: MapPin) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-        ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            Text(text = pin.title)
-            Text(text = pin.description)
-            FlowRow(
-                modifier = Modifier.padding(top = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(modifier = Modifier.padding(16.dp)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 16.dp) // Give some space between the text and the image
             ) {
-                pin.tags.forEach { tag ->
-                    ChipView(tag)
+                Text(text = pin.title)
+                Text(text = pin.description)
+                FlowRow(
+                    modifier = Modifier.padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    pin.tags.forEach { tag ->
+                        ChipView(tag)
+                    }
                 }
             }
+            AsyncImage(
+                model = pin.photoUrl,
+                contentDescription = "Pin Image",
+                modifier = Modifier
+                    .size(100.dp) // Set the size of the image
+                    .clip(RoundedCornerShape(8.dp)), // Optional: if you want rounded corners for the image
+                contentScale = ContentScale.Crop // Crop the image if not fully inside the bounds
+            )
         }
     }
 }
+
 
 @Composable
 fun ChipView(tag: String) {
