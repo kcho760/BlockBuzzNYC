@@ -469,25 +469,24 @@ fun fetchAndDisplayPins(googleMap: GoogleMap, currentLocation: LatLng, context: 
                     id = document.id // Ensure this line is correctly setting the document ID
                 }
                 val pinLocation = LatLng(mapPin.latitude, mapPin.longitude)
+                //Distance check disabled for now
+                // if (distanceBetweenPoints(currentLocation, pinLocation) <= 200) {
+                // Food pin disabled for now
+                // addCustomMarker(googleMap, mapPin, context, R.drawable.food_pin)
+                val marker = googleMap.addMarker(
+                    MarkerOptions().position(pinLocation).title(mapPin.title)
+                )
+                marker?.tag = PinInfo(
+                    description = mapPin.description,
+                    creatorUsername = mapPin.creatorUsername,
+                    creatorUserId = mapPin.creatorUserId, // Set this value
+                    photoUrl = mapPin.photoUrl,
+                    id = mapPin.id,
+                    tags = mapPin.tags
+                )
 
-                // Check if the pin is within a certain distance of the current location
-                if (distanceBetweenPoints(currentLocation, pinLocation) <= 200) {
-                    // Use food_pin for all markers for now
-//                    addCustomMarker(googleMap, mapPin, context, R.drawable.food_pin)
-                    val marker = googleMap.addMarker(
-                        MarkerOptions().position(pinLocation).title(mapPin.title)
-                    )
-                    marker?.tag = PinInfo(
-                        description = mapPin.description,
-                        creatorUsername = mapPin.creatorUsername,
-                        creatorUserId = mapPin.creatorUserId, // Set this value
-                        photoUrl = mapPin.photoUrl,
-                        id = mapPin.id,
-                        tags = mapPin.tags
-                    )
-
-                    Log.d("MapPin", "Fetched pin with ID: ${mapPin.id}")
-                }
+                Log.d("MapPin", "Fetched pin with ID: ${mapPin.id}")
+                // }
             }
         }
         .addOnFailureListener { exception ->
