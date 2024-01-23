@@ -29,9 +29,6 @@ Optimization and bug fixes:
         -picture removal
         -likes removal
     -clearing pin fields post creation
-    -clearing search fields post search
-    -search allow for lower and uppercase matches
-    -search allow for partial matches?
 
 ~~-Google account login~~
 ~~look up ability to use google map functionality such as buisness info~~

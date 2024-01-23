@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,10 +34,14 @@ import coil.compose.AsyncImage
 import com.example.blockbuzznyc.model.MapPin
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.Tasks
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.toObject
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
+
 
 @Composable
 fun SearchScreen(onPinSelected: (LatLng) -> Unit) {
@@ -44,7 +49,15 @@ fun SearchScreen(onPinSelected: (LatLng) -> Unit) {
     var selectedTags by remember { mutableStateOf(listOf<String>()) }
     var searchResults by remember { mutableStateOf<List<MapPin>>(emptyList()) }
     val coroutineScope = rememberCoroutineScope()
+    var recentPins by remember { mutableStateOf<List<MapPin>>(emptyList()) }
 
+    LaunchedEffect(selectedTags) {
+        if (selectedTags.isEmpty()) {
+            fetchRecentPins { results ->
+                recentPins = results
+            }
+        }
+    }
     Column(modifier = Modifier.fillMaxWidth()) {
         // Replace FlowRow with LazyRow for horizontal scrolling
         LazyRow(
@@ -66,6 +79,18 @@ fun SearchScreen(onPinSelected: (LatLng) -> Unit) {
                             searchResults = results
                         }
                     }
+                }
+            }
+        }
+
+        if (selectedTags.isEmpty() && recentPins.isNotEmpty()) {
+            Text("Recent Pins")
+            LazyColumn() {
+                items(recentPins) { pin ->
+                    PinItem(pin, onClick = {
+                        val location = LatLng(pin.latitude, pin.longitude)
+                        onPinSelected(location)
+                    })
                 }
             }
         }
@@ -170,7 +195,6 @@ fun PinItem(pin: MapPin, onClick: () -> Unit) {
     }
 }
 
-
 @Composable
 fun ChipView(tag: String) {
     Surface(
@@ -182,5 +206,44 @@ fun ChipView(tag: String) {
             modifier = Modifier.padding(8.dp),
             color = MaterialTheme.colorScheme.onSecondary
         )
+    }
+}
+
+fun fetchRecentPins(onComplete: (List<MapPin>) -> Unit) {
+    val db = Firebase.firestore
+    db.collection("lastFivePins")
+        .orderBy("createdAt", Query.Direction.DESCENDING)
+        .get()
+        .addOnSuccessListener { documents ->
+            val pinIds = documents.map { it.id }
+            fetchPinsByIds(pinIds, onComplete)
+        }
+        .addOnFailureListener { exception ->
+            Log.w("SearchScreen", "Error getting recent pins: ", exception)
+            onComplete(emptyList())
+        }
+}
+
+fun fetchPinsByIds(pinIds: List<String>, onComplete: (List<MapPin>) -> Unit) {
+    val db = Firebase.firestore
+    val pinsRef = db.collection("pins")
+
+    // Create a list to hold all the async operations
+    val tasks = pinIds.map { pinId ->
+        pinsRef.document(pinId).get()
+    }
+
+    // Wait for all the async operations to complete
+    Tasks.whenAllSuccess<DocumentSnapshot>(tasks).addOnSuccessListener { documentSnapshots ->
+        val pins = documentSnapshots.mapNotNull { snapshot ->
+            snapshot.toObject<MapPin>()?.apply {
+                // Ensure the 'id' field is set correctly
+                this.id = snapshot.id
+            }
+        }
+        onComplete(pins)
+    }.addOnFailureListener { exception ->
+        Log.w("SearchScreen", "Error fetching pins by IDs: ", exception)
+        onComplete(emptyList())
     }
 }

@@ -48,8 +48,10 @@ import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.Firebase
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
 
@@ -456,10 +458,13 @@ fun savePinToFirestore(mapPin: MapPin, userId: String, onComplete: (Boolean, Str
         transaction.update(userRef, "numberOfPins", newPinCount)
     }.addOnSuccessListener {
         onComplete(true, newPinRef.id)
+        // Call the function to update the last five pins collection
+        updateLastFivePinsCollection(newPinRef.id)
     }.addOnFailureListener {
         onComplete(false, "")
     }
 }
+
 
 
 
@@ -526,3 +531,23 @@ fun distanceBetweenPoints(startLatLng: LatLng, endLatLng: LatLng): Float {
 //        .icon(customIcon) // Set the custom icon here
 //    googleMap.addMarker(markerOptions)
 //}
+
+fun updateLastFivePinsCollection(newPinId: String) {
+    val db = Firebase.firestore
+    val lastFivePinsRef = db.collection("lastFivePins")
+
+    // Fetch the current last five pins
+    lastFivePinsRef.orderBy("createdAt", Query.Direction.DESCENDING).limit(5)
+        .get()
+        .addOnSuccessListener { documents ->
+            val ids = documents.map { it.id }
+
+            if (ids.size == 5) {
+                // Remove the oldest pin ID if there are already 5
+                lastFivePinsRef.document(ids.last()).delete()
+            }
+
+            // Add the new pin ID
+            lastFivePinsRef.document(newPinId).set(mapOf("createdAt" to Timestamp.now()))
+        }
+}
