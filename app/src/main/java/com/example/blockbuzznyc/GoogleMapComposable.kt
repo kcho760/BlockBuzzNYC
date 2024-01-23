@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.blockbuzznyc.model.MapPin
 import com.google.android.gms.location.LocationServices
@@ -57,7 +58,7 @@ import com.google.firebase.storage.storage
 
 
 @Composable
-fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?) {
+fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?, navController: NavController) {
     var showDialog by remember { mutableStateOf(false) }
     var pinTitle by remember { mutableStateOf("") }
     var pinDescription by remember { mutableStateOf("") }
@@ -272,11 +273,15 @@ fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?
                             }
                         }
                     },
-                    onLikeToggle = {toggleLikeOnPin(pin, currentUserUid) { updatedPin ->
+                    onLikeToggle = {toggleLikeOnPin(pin, currentUserUid) {updatedPin ->
                         selectedMapPin = updatedPin
                     }
+                    },
+                    onChatButtonClick = { pin ->
+                        // Define what happens when the chat button is clicked
+                        // For example, navigate to a chat screen
+                        navController.navigate("chatScreen/${pin.id}/${pin.title}")
                     }
-
                 )
             }
         }

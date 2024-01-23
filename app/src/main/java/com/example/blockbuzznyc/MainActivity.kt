@@ -233,7 +233,7 @@ fun MainScreen(
                 enterTransition = { slideInFromRight() },
                 exitTransition = { slideOutToRight() }
             ) {
-                GoogleMapComposable(imageHandler, selectedPinLocation = selectedPinLocation.value)
+                GoogleMapComposable(imageHandler, selectedPinLocation = selectedPinLocation.value, navController = navController)
                 Log.d("selectedPinLocation", "${selectedPinLocation.value}")
             }
             composable(
@@ -267,6 +267,11 @@ fun MainScreen(
                     selectedPinLocation.value = selectedLocation // Use the passed location
                     navController.navigate("main")
                 })
+            }
+            composable("chatScreen/{pinId}/{pinTitle}") { backStackEntry ->
+                val pinId = backStackEntry.arguments?.getString("pinId") ?: ""
+                val pinTitle = backStackEntry.arguments?.getString("pinTitle") ?: ""
+                ChatScreen(navController, pinId, pinTitle)
             }
         }
     }

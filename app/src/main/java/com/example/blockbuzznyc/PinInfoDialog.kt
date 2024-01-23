@@ -40,7 +40,8 @@ fun PinInfoDialog(
     currentUser: String,
     onDismiss: () -> Unit,
     onDelete: (MapPin) -> Unit,
-    onLikeToggle: (MapPin) -> Unit
+    onLikeToggle: (MapPin) -> Unit,
+    onChatButtonClick: (MapPin) -> Unit
 ) {
     var creatorProfilePictureUrl by remember { mutableStateOf<String?>(null) }
 
@@ -120,6 +121,12 @@ fun PinInfoDialog(
                         Button(onClick = { onLikeToggle(mapPin) }) {
                             Text(likeButtonText)
                         }
+                    }
+                    Button(
+                        onClick = { onChatButtonClick(mapPin) },
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Text("Open Chat")
                     }
                 }
             },
