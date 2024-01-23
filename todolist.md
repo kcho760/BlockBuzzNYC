@@ -10,6 +10,7 @@ Features
             ~~-add user pins~~
             ~~-click on pins to move on map~~
             -achievements
+                started but need to fill out actual stickers and more achievements
         search page
             ~~-search functionality~~
             ~~-recently created pins~~
