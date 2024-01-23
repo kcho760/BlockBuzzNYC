@@ -46,6 +46,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
+import com.example.blockbuzznyc.model.Achievement
 import com.example.blockbuzznyc.model.MapPin
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.Firebase
@@ -62,7 +63,9 @@ data class User(
     val username: String = "",
     val profilePictureUrl: String? = null, // Nullable if you want to allow users without a profile picture
     val numberOfPins: Int = 0,
-    val totalLikes: Int = 0
+    val totalLikes: Int = 0,
+    val achievements: List<Achievement> = emptyList() // Add this line
+
 )
 
 @Composable
@@ -194,7 +197,10 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (LatLng) -> Unit) {
                     CountSection(count = user.numberOfPins, label = "Pins")
 
                     // Display the actual Likes count
-                    CountSection(count = user.totalLikes, label = "Likes") // Updated to use totalLikes
+                    CountSection(
+                        count = user.totalLikes,
+                        label = "Likes"
+                    ) // Updated to use totalLikes
                 }
             }
             Box(
@@ -236,12 +242,14 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (LatLng) -> Unit) {
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Placeholder for Pins count
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(text = "Placeholder for Achievements")
+                    Column {
+                        user.achievements.let { achievements ->
+                            achievements.forEach { achievement ->
+                                if (achievement.earned) {
+                                    Text(text = achievement.name) // Show each earned achievement
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -266,6 +274,7 @@ fun uploadProfilePicture(userId: String, imageUri: Uri, onSuccess: (String) -> U
         .addOnSuccessListener { taskSnapshot ->
             taskSnapshot.metadata?.reference?.downloadUrl?.addOnSuccessListener { uri ->
                 onSuccess(uri.toString())
+                fetchUserAndCheckAchievements(userId)
             }
                 ?.addOnFailureListener {
                     // Could not get the download URL

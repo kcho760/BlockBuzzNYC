@@ -41,6 +41,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.blockbuzznyc.model.Achievement
 import com.example.blockbuzznyc.model.MapPin
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -278,8 +279,6 @@ fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?
                     }
                     },
                     onChatButtonClick = { pin ->
-                        // Define what happens when the chat button is clicked
-                        // For example, navigate to a chat screen
                         navController.navigate("chatScreen/${pin.id}/${pin.title}")
                     }
                 )
@@ -410,7 +409,7 @@ fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri?, googleMap: GoogleMap, cu
     val storageRef = Firebase.storage.reference
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-    val defaultPhotoUrl = "https://firebasestorage.googleapis.com/v0/b/blockbuzznyc.appspot.com/o/pin_images%2Fnew_york_default.jpg?alt=media&token=a7d9a010-22fc-4c9d-8f98-5971c03e0427"
+    val defaultPhotoUrl = "https://firebasestorage.googleapis.com/v0/b/blockbuzznyc.appspot.com/o/pin_images%2Fnew_york_default.jpg?alt=media&token=969960c8-7df8-4a07-8e6c-e41a419521aa"
 
     if (imageUri == null || imageUri.toString().startsWith("gs://")) {
         // Use default photo URL if no image is selected or if the imageUri is a direct Firebase Storage reference
@@ -463,15 +462,28 @@ fun savePinToFirestore(mapPin: MapPin, userId: String, onComplete: (Boolean, Str
         transaction.update(userRef, "numberOfPins", newPinCount)
     }.addOnSuccessListener {
         onComplete(true, newPinRef.id)
-        // Call the function to update the last five pins collection
+        // Update the last five pins collection
         updateLastFivePinsCollection(newPinRef.id)
-    }.addOnFailureListener {
+        // Now that the pin has been saved, check for achievements.
+        fetchUserAndCheckAchievements(userId)
+    }.addOnFailureListener { e ->
+        Log.e("SavePin", "Failed to save pin: ${e.message}", e)
         onComplete(false, "")
     }
 }
 
-
-
+fun fetchUserAndCheckAchievements(userId: String) {
+    val userRef = Firebase.firestore.collection("users").document(userId)
+    userRef.get().addOnSuccessListener { documentSnapshot ->
+        val user = documentSnapshot.toObject(User::class.java)
+        user?.let { user ->
+            // Assuming that checkForAchievements updates the user's achievements
+            checkForAchievements(user)
+        }
+    }.addOnFailureListener { e ->
+        Log.e("Achievements", "Failed to fetch user for achievements: ${e.message}", e)
+    }
+}
 
 data class PinInfo(
     val description: String,
@@ -556,3 +568,39 @@ fun updateLastFivePinsCollection(newPinId: String) {
             lastFivePinsRef.document(newPinId).set(mapOf("createdAt" to Timestamp.now()))
         }
 }
+
+fun checkForAchievements(user: User) {
+    val achievements = user.achievements.toMutableList()
+
+    // Check each criterion and add/update achievements as necessary
+    if (user.numberOfPins >= 1 && achievements.none { it.id == "rookiePoster" }) {
+        achievements.add(Achievement("rookiePoster", "Rookie Poster", "Create your first pin.", true, Timestamp.now()))
+    }
+
+    if (user.numberOfPins >= 5 && achievements.none { it.id == "proPoster" }) {
+        achievements.add(Achievement("proPoster", "Pro Poster", "Create 5 pins.", true, Timestamp.now()))
+    }
+
+    if (user.numberOfPins >= 10 && achievements.none { it.id == "masterPoster" }) {
+        achievements.add(Achievement("masterPoster", "Master Poster", "Create 10 pins.", true, Timestamp.now()))
+    }
+
+    if (user.totalLikes >= 10 && achievements.none { it.id == "influencer" }) {
+        achievements.add(Achievement("influencer", "Influencer", "Receive 100 likes on your pins.", true, Timestamp.now()))
+    }
+
+    if(user.profilePictureUrl != "" && achievements.none { it.id == "profilePic" }) {
+        achievements.add(Achievement("profilePic", "Say Cheese", "Upload a profile picture.", true, Timestamp.now()))
+    }
+
+    // Update the user document with the new achievements
+    updateUserAchievements(user.userId, achievements)
+}
+
+fun updateUserAchievements(userId: String, achievements: List<Achievement>) {
+    val userRef = Firebase.firestore.collection("users").document(userId)
+    userRef.update("achievements", achievements)
+        .addOnSuccessListener { Log.d("Achievements", "User achievements updated.") }
+        .addOnFailureListener { e -> Log.e("Achievements", "Error updating achievements.", e) }
+}
+
