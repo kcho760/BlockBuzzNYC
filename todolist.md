@@ -12,18 +12,18 @@ Features
             -achievements
         search page
             ~~-search functionality~~
-            -recently created pins
+            ~~-recently created pins~~
             ~~-click pins to move to location on map~~
     -enhance pins
         ~~profile picture~~
         ~~tags~~
-        comments
+        ~~chat~~
         ~~likes~~
         ~~delete pins (only for the user)~~
         make alert dialog look better
 
 Optimization and bug fixes:
-    -check on delay between pin creation and pin showing up on map
+    ~~-check on delay between pin creation and pin showing up on map~~
     -better pin asset
     -deletion cleanup
         -picture removal
