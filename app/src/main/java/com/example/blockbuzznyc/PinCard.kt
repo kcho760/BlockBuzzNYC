@@ -28,25 +28,26 @@ fun PinCard(pin: MapPin, onPinSelected: (LatLng) -> Unit) {
             .width(150.dp) // Fixed width for the card
             .clickable {
                 onPinSelected(LatLng(pin.latitude, pin.longitude)) // Use latitude and longitude from the pin
-            } // Assuming `pin.location` is a `LatLng` object
+            }
     ) {
         Column {
             AsyncImage(
                 model = pin.photoUrl,
                 contentDescription = pin.title,
                 modifier = Modifier
-                    .height(120.dp) // Fixed height for the image
+                    .height(75.dp) // Fixed height for the image
                     .fillMaxWidth(), // The image should fill the card width
                 contentScale = ContentScale.Crop // Crop the image if necessary to fill the bounds
             )
-            Column(modifier = Modifier.padding(8.dp)) {
+            Column(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth() // Ensure the title has the maximum width it can use
+            ) {
                 Text(
                     text = pin.title,
-                    maxLines = 1, // Allow only one line for the title
+                    maxLines = 2, // Allow two lines for the title if needed
                     overflow = TextOverflow.Ellipsis, // Add ellipsis if the title is too long
-                    modifier = Modifier
-                        .fillMaxWidth() // Ensure the title fills the width, so overflow can work
-                        .padding(bottom = 4.dp) // Space below the title
                 )
                 // Description or other content can be added here
                 // If the description is long, consider adding maxLines and overflow here as well
@@ -54,4 +55,5 @@ fun PinCard(pin: MapPin, onPinSelected: (LatLng) -> Unit) {
         }
     }
 }
+
 

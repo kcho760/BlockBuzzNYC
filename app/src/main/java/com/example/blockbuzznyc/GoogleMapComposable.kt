@@ -23,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -87,7 +88,9 @@ fun GoogleMapComposable(
     val availableTags = listOf("Food", "Art", "Other", "Nature", "Entertainment") //tag list
     var isInitialSetupDone by remember { mutableStateOf(false) }
     val selectedPinLocation = selectedMapPin.value?.let { LatLng(it.latitude, it.longitude) }
-
+    var titleErrorMessage by remember { mutableStateOf<String?>(null) }
+    var descriptionErrorMessage by remember { mutableStateOf<String?>(null) }
+    var tagErrorMessage by remember { mutableStateOf<String?>(null) }
 
     fun fetchCurrentUserUsername(onResult: (String) -> Unit) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -310,14 +313,35 @@ fun GoogleMapComposable(
                         value = pinTitle,
                         onValueChange = { pinTitle = it },
                         label = { Text("Title") },
-                        singleLine = true
+                        singleLine = true,
+                        isError = titleErrorMessage != null,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
+                    titleErrorMessage?.let { errorMessage ->
+                        Text(
+                            errorMessage,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error, // Use colorScheme.error
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                        )
+                    }
+
                     TextField(
                         value = pinDescription,
                         onValueChange = { pinDescription = it },
                         label = { Text("Description") },
-                        singleLine = true
+                        singleLine = true,
+                        isError = descriptionErrorMessage != null,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
+                    descriptionErrorMessage?.let { errorMessage ->
+                        Text(
+                            errorMessage,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error, // Use colorScheme.error
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                        )
+                    }
                     Button(onClick = {
                         imageHandler.takePicture { uri ->
                             imageUri = uri
@@ -357,37 +381,78 @@ fun GoogleMapComposable(
                             )
                         }
                     }
-
+                    tagErrorMessage?.let { errorMessage ->
+                        Text(
+                            errorMessage,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error, // Use colorScheme.error
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                        )
+                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        showDialog = false
-                        selectedLatLng?.let { latLng ->
-                            val mapPin = MapPin(
-                                title = pinTitle,
-                                description = pinDescription,
-                                latitude = latLng.latitude,
-                                longitude = latLng.longitude,
-                                photoUrl = "",
-                                creatorUsername = pincreatorUsername,
-                                tags = selectedTags
-                            )
-                            imageUri.let { uri ->
-                                googleMapInstance?.let { googleMap ->
-                                    currentLatLngInstance?.let { currentLatLng ->
-                                        confirmAndCreatePin(mapPin, uri, googleMap, currentLatLng, context) { success ->
-                                            if (success) {
-                                                Log.d("MapPin", "Pin created successfully")
-                                                fetchAndDisplayPins(googleMap, currentLatLng, context)
-                                            } else {
-                                                Log.d("MapPin", "Pin creation failed")
+                        // Initialize validation flag
+                        var isValid = true
+
+                        // Reset error messages
+                        titleErrorMessage = null
+                        descriptionErrorMessage = null
+
+                        // Validate title
+                        if (pinTitle.isBlank()) {
+                            titleErrorMessage = "Title cannot be empty"
+                            isValid = false
+                        }
+
+                        // Validate description
+                        if (pinDescription.isBlank()) {
+                            descriptionErrorMessage = "Description cannot be empty"
+                            isValid = false
+                        }
+
+                        // Validate tags
+                        if (selectedTags.isEmpty()) {
+                            tagErrorMessage = "Please select at least one tag"
+                            isValid = false
+                        }
+
+                        // Proceed only if validation passes
+                        if (isValid) {
+                            selectedLatLng?.let { latLng ->
+                                val mapPin = MapPin(
+                                    title = pinTitle,
+                                    description = pinDescription,
+                                    latitude = latLng.latitude,
+                                    longitude = latLng.longitude,
+                                    photoUrl = "",
+                                    creatorUsername = pincreatorUsername,
+                                    tags = selectedTags
+                                )
+                                imageUri.let { uri ->
+                                    googleMapInstance?.let { googleMap ->
+                                        currentLatLngInstance?.let { currentLatLng ->
+                                            confirmAndCreatePin(mapPin, uri, googleMap, currentLatLng, context) { success ->
+                                                if (success) {
+                                                    Log.d("MapPin", "Pin created successfully")
+                                                    fetchAndDisplayPins(googleMap, currentLatLng, context)
+
+                                                    // Reset form fields after successful creation
+                                                    pinTitle = ""
+                                                    pinDescription = ""
+                                                    imageUri = null
+                                                    selectedTags = emptyList()
+                                                } else {
+                                                    Log.d("MapPin", "Pin creation failed")
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
+                            showDialog = false
                         }
                     }
                 ) { Text("Confirm") }

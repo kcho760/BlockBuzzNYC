@@ -2,7 +2,6 @@ package com.example.blockbuzznyc
 
 import android.util.Log
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -59,7 +58,7 @@ fun PinInfoDialog(
         AlertDialog(
             onDismissRequest = onDismiss,
             title = {
-                Row {
+                Row() {
                     if (creatorProfilePictureUrl != null) {
                         Image(
                             painter = rememberAsyncImagePainter(model = creatorProfilePictureUrl),
@@ -70,40 +69,40 @@ fun PinInfoDialog(
                                 .fillMaxSize(), // This will make sure the image fills the circle
                             contentScale = ContentScale.Crop // This will crop the image to fit the circle while maintaining the aspect ratio
                         )
+                        Spacer(modifier = Modifier.size(8.dp))
                     }
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Text(
-                        text = mapPin.title,
-                        style = MaterialTheme.typography.headlineSmall.copy(color = Color.Black)
-                    )
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Row {
-                        mapPin.tags.forEach { tag ->
-                            Surface(
-                                shape = RoundedCornerShape(50), // Circular shape
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) // Translucent background
-                            ) {
-                                Text(
-                                    text = tag,
-                                    modifier = Modifier
-                                        .padding(horizontal = 8.dp, vertical = 4.dp) // Padding inside the bubble
-                                        .border(1.dp, Color.LightGray, RoundedCornerShape(50)), // Border to create bubble effect
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.bodySmall.copy(color = Color.Black)
-                                )
+                    Column {
+                        Text(
+                            text = mapPin.title,
+                            style = MaterialTheme.typography.headlineSmall.copy(color = Color.Black)
+                        )
+                        Text(
+                            text = "By ${mapPin.creatorUsername}",
+                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
+                        )
+                        Spacer(modifier = Modifier.size(4.dp))
+                        Row {
+                            mapPin.tags.forEach { tag ->
+                                Surface(
+                                    shape = RoundedCornerShape(50), // Circular shape
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) // Translucent background
+                                ) {
+                                    Text(
+                                        text = tag,
+                                        modifier = Modifier
+                                            .padding(horizontal = 8.dp, vertical = 4.dp), // Padding inside the bubble
+                                        textAlign = TextAlign.Center,
+                                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Black)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.size(4.dp)) // Space between bubbles
                             }
-                            Spacer(modifier = Modifier.size(4.dp)) // Space between bubbles
                         }
                     }
                 }
             },
             text = {
                 Column {
-
-                    Text(
-                        text = "By ${mapPin.creatorUsername}",
-                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
-                    )
                     Text(
                         text = mapPin.description,
                         style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)

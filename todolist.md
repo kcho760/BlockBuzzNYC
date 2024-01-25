@@ -21,21 +21,22 @@ Features
         ~~delete pins (only for the user)~~
 
 Optimization and bug fixes:
-    -check on delay between pin creation and pin showing up on map
     -better pin asset
-    -deletion cleanup
-        -picture removal
-        -likes removal
-    -clearing pin fields post creation
-    -tags in pininfo get smushed in smaller screens
-    -pins in profile not showing titles
-    -search pin click doesn't open pininfodialog, add to nav host
     -logging out from profile page causes crash
-    -don't allow empty fields for title and description in creation
-        -buggy, sometimes allows?
-    -if pin is in last 5 pins and deleted, it should be deleted from firebase collection of lastFivePins
     -alert messages for achievements
     -ERROR MESSAGES EVERYWHERE
+    -check on delay between pin creation and pin showing up on map (fixed?)
+    -delete pin's chat messages from realtime database
+    -permission needed screen always shows for a second
+~~-pins in profile not showing titles~~
+~~-tags in pininfo get smushed in smaller screens~~
+~~-deletion cleanup~~
+~~-picture removal~~
+~~-likes removal~~
+~~-clearing pin fields post creation~~
+~~-search pin click doesn't open pininfodialog, add to nav host~~
+~~-don't allow empty fields for title and description in creation~~
+~~-if pin is in last 5 pins and deleted, it should be deleted from firebase collection of lastFivePins~~
 ~~-Google account login~~
 ~~look up ability to use google map functionality such as buisness info~~
 ~~google account login~~

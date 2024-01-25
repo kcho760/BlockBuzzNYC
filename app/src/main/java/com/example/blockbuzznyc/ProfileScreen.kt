@@ -98,15 +98,17 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
         }
     }
 
-    // Define the userFlow outside LaunchedEffect
     val userFlow = flow {
-        val userDoc =
-            FirebaseFirestore.getInstance().collection("users").document(userId).get().await()
-        val user = userDoc.toObject(User::class.java) ?: User()
-        emit(user)
+        // Ensure that we have a valid userId before trying to read from Firestore
+        if (userId.isNotEmpty()) {
+            val userDoc = FirebaseFirestore.getInstance().collection("users").document(userId).get().await()
+            val user = userDoc.toObject(User::class.java) ?: User()
+            emit(user)
+        } else {
+            emit(User()) // Emit an empty User object or handle the error as appropriate
+        }
     }
     LaunchedEffect(refreshToggle) {
-        // Collect userFlow inside LaunchedEffect
         val user = userFlow.first()
         profilePictureUrl = user.profilePictureUrl
     }
@@ -198,7 +200,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     // Display the actual Pins count
-                    CountSection(count = user.numberOfPins, label = "Pins")
+                    CountSection(count = user.numberOfPins, label = "Created Pins")
 
                     // Display the actual Likes count
                     CountSection(
@@ -361,7 +363,7 @@ fun AchievementItem(achievement: Achievement) {
     Card(
         modifier = Modifier
             .padding(vertical = 4.dp) // Padding for each item
-            .size(width = 100.dp, height = 100.dp), // Define the size of the card
+            .size(width = 150.dp, height = 110.dp), // Define the size of the card
         shape = RoundedCornerShape(8.dp), // Rounded corners for the card
         content = {
             Column(
@@ -375,13 +377,19 @@ fun AchievementItem(achievement: Achievement) {
                     painter = painterResource(id = R.drawable.trophy_icon),
                     contentDescription = "Achievement",
                     modifier = Modifier
-                        .size(60.dp)
+                        .size(45.dp)
                         .align(Alignment.CenterHorizontally),
                     tint = Color.Unspecified // This will keep the original drawable colors
                 )
                 Spacer(modifier = Modifier.height(4.dp)) // Space between icon and text
                 Text(
                     text = achievement.name,
+                    style = MaterialTheme.typography.bodyMedium, // Use bodySmall or any other available style
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+                Spacer(modifier = Modifier.height(4.dp)) // Space between icon and text
+                Text(
+                    text = achievement.description,
                     style = MaterialTheme.typography.bodySmall, // Use bodySmall or any other available style
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )

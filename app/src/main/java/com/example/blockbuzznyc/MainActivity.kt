@@ -149,7 +149,6 @@ fun MainScreen(
         }
     }
 
-
     if (showUsernameDialog.value) {
         UsernameCreationDialog(
             onUsernameSet = { newUsername ->
@@ -175,8 +174,9 @@ fun MainScreen(
                     actions = {
                         IconButton(onClick = {
                             FirebaseAuth.getInstance().signOut()
-                            isLoggedIn.value = false
+                            navController.popBackStack()
                             navController.navigate("login")
+                            isLoggedIn.value = false
                         }) {
                             Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
                         }
@@ -272,6 +272,7 @@ fun MainScreen(
             ) {
                 SearchScreen(onPinSelected = { selectedPin ->
                     selectedMapPin.value = selectedPin // Set the selectedMapPin with the whole MapPin object
+                    showPinInfoDialog.value = true
                     navController.navigate("main")
                 })
             }
