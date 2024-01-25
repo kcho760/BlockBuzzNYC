@@ -380,7 +380,7 @@ fun GoogleMapComposable(
                                         confirmAndCreatePin(mapPin, uri, googleMap, currentLatLng, context) { success ->
                                             if (success) {
                                                 Log.d("MapPin", "Pin created successfully")
-                                                // Refresh pins here if needed
+                                                fetchAndDisplayPins(googleMap, currentLatLng, context)
                                             } else {
                                                 Log.d("MapPin", "Pin creation failed")
                                             }
