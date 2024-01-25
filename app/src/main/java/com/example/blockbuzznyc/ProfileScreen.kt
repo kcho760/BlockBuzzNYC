@@ -69,7 +69,6 @@ data class User(
     val numberOfPins: Int = 0,
     val totalLikes: Int = 0,
     val achievements: List<Achievement> = emptyList() // Add this line
-
 )
 
 @Composable

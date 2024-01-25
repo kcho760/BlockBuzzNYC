@@ -275,7 +275,7 @@ fun GoogleMapComposable(
                 currentUser = FirebaseAuth.getInstance().currentUser?.uid ?: "",
                 onDismiss = { showPinInfoDialog.value = false },
                 onDelete = { pinToDelete ->
-                    deletePin(pinToDelete) {
+                    deletePin(pinToDelete, currentUserUid) {
                         showPinInfoDialog.value = false
                         googleMapInstance?.let { map ->
                             currentLatLngInstance?.let { latLng ->

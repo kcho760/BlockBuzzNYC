@@ -32,6 +32,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.blockbuzznyc.model.MapPin
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import com.google.firebase.storage.storage
 import kotlinx.coroutines.tasks.await
 
 @Composable
@@ -142,24 +143,102 @@ fun PinInfoDialog(
     }
 }
 
-fun deletePin(mapPin: MapPin, onSuccess: () -> Unit) {
-    Log.d("PinInfoDialog", "Deleting pin with ID $mapPin")
-    if (mapPin.id.isNotEmpty()) { // Check if the ID is not empty
-        val db = Firebase.firestore
-        db.collection("pins").document(mapPin.id).delete() // Ensure mapPin.id is a valid document ID
+fun deletePin(mapPin: MapPin, currentUser: String, onSuccess: () -> Unit) {
+    Log.d("PinInfoDialog", "Deleting pin with ID ${mapPin.id}")
+
+    val db = Firebase.firestore
+    val defaultPhotoUrl = "https://firebasestorage.googleapis.com/v0/b/blockbuzznyc.appspot.com/o/pin_images%2Fnew_york_default.jpg?alt=media&token=969960c8-7df8-4a07-8e6c-e41a419521aa"
+
+    fun updateUserTotalLikes(onComplete: () -> Unit) {
+        val userRef = db.collection("users").document(currentUser)
+        db.runTransaction { transaction ->
+            val user = transaction.get(userRef).toObject(User::class.java)
+            val newTotalLikes = (user?.totalLikes ?: 0) - mapPin.likes.size
+            transaction.update(userRef, "totalLikes", maxOf(newTotalLikes, 0))
+        }
             .addOnSuccessListener {
-                Log.d("PinInfoDialog", "Pin successfully deleted")
-                onSuccess()
+                Log.d("PinInfoDialog", "User total likes updated")
+                onComplete()
             }
             .addOnFailureListener { e ->
-                Log.e("PinInfoDialog", "Error deleting pin", e)
-                // Handle failure
+                Log.e("PinInfoDialog", "Error updating user total likes", e)
+                // Handle failure in updating user total likes
             }
-    } else {
-        Log.e("PinInfoDialog", "Error: Pin ID is empty")
-        // Handle case where pin ID is empty
+    }
+
+    // Function to delete the image from Firebase Storage
+    fun deleteImage(onComplete: () -> Unit) {
+        if (mapPin.photoUrl.isNotEmpty() && mapPin.photoUrl != defaultPhotoUrl) {
+            val storageRef = Firebase.storage.getReferenceFromUrl(mapPin.photoUrl)
+            storageRef.delete()
+                .addOnSuccessListener {
+                    Log.d("PinInfoDialog", "Image successfully deleted")
+                    onComplete()
+                }
+                .addOnFailureListener { e ->
+                    Log.e("PinInfoDialog", "Error deleting image", e)
+                    // Handle failure in deleting the image
+                }
+        } else {
+            // Skip deleting the image if the URL is empty or it's the default image
+            onComplete()
+        }
+    }
+
+    // Function to update the lastFivePins collection
+    // Function to update the lastFivePins collection
+    fun updateLastFivePins(onComplete: () -> Unit) {
+        db.collection("lastFivePins").get()
+            .addOnSuccessListener { snapshot ->
+                val pinsList = snapshot.documents.mapNotNull { it.id }
+                if (mapPin.id in pinsList) {
+                    db.collection("lastFivePins").document(mapPin.id).delete()
+                        .addOnSuccessListener {
+                            Log.d("PinInfoDialog", "Pin ID removed from lastFivePins")
+                            onComplete()
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("PinInfoDialog", "Error removing pin ID from lastFivePins", e)
+                            // Handle failure in removing the pin ID from lastFivePins
+                        }
+                } else {
+                    onComplete()
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("PinInfoDialog", "Error retrieving lastFivePins", e)
+                // Handle failure in retrieving lastFivePins
+            }
+    }
+
+    // Function to delete the pin information from Firestore
+    fun deletePinInfo(onComplete: () -> Unit) {
+        if (mapPin.id.isNotEmpty()) {
+            db.collection("pins").document(mapPin.id).delete()
+                .addOnSuccessListener {
+                    Log.d("PinInfoDialog", "Pin successfully deleted")
+                    onComplete() // Correctly invoking onComplete here
+                }
+                .addOnFailureListener { e ->
+                    Log.e("PinInfoDialog", "Error deleting pin", e)
+                    // Handle failure
+                }
+        } else {
+            Log.e("PinInfoDialog", "Error: Pin ID is empty")
+            // Handle case where pin ID is empty
+        }
+    }
+
+    // Start the delete process by attempting to delete the image first
+    deleteImage {
+        deletePinInfo {
+            updateLastFivePins {
+                updateUserTotalLikes(onSuccess) // Call onSuccess after user's total likes are updated
+            }
+        }
     }
 }
+
 fun toggleLikeOnPin(mapPin: MapPin, currentUser: String, onUpdated: (MapPin) -> Unit) {
     val db = Firebase.firestore
     val pinRef = db.collection("pins").document(mapPin.id)
