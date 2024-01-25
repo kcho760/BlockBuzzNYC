@@ -48,7 +48,6 @@ import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.example.blockbuzznyc.model.Achievement
 import com.example.blockbuzznyc.model.MapPin
-import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -69,7 +68,7 @@ data class User(
 )
 
 @Composable
-fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (LatLng) -> Unit) {
+fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     val userId = currentUser?.uid ?: ""
     var profilePictureUrl by remember { mutableStateOf<String?>(null) }
@@ -220,8 +219,8 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (LatLng) -> Unit) {
                     LazyRow {
                         items(pins) { pin ->
                             PinCard(pin = pin, onPinSelected = {
-                                val location = LatLng(pin.latitude, pin.longitude)
-                                onPinSelected(location)
+                                Log.d("PinTracking", "Pin selected: ${pin.id}, Title: ${pin.title}")
+                                onPinSelected(pin)
                             })
                         }
                     }

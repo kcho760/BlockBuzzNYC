@@ -49,6 +49,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.blockbuzznyc.model.MapPin
 import com.example.blockbuzznyc.ui.theme.BlockBuzzNYCTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -66,6 +67,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var navController: NavHostController
     private val isLoggedIn = mutableStateOf(FirebaseAuth.getInstance().currentUser != null)
     private val selectedPinLocation = mutableStateOf<LatLng?>(null)
+    private val showPinInfoDialog = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,7 +92,7 @@ class MainActivity : ComponentActivity() {
             navController = rememberNavController()
             val isLoggedIn = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
             BlockBuzzNYCTheme {
-                MainScreen(imageHandler, googleSignInLauncher, this, navController, isLoggedIn, selectedPinLocation)
+                MainScreen(imageHandler, googleSignInLauncher, this, navController, isLoggedIn, showPinInfoDialog)
             }
         }
     }
@@ -118,14 +120,13 @@ fun MainScreen(
     activityContext: Context,
     navController: NavHostController,
     isLoggedIn: MutableState<Boolean>,
-    selectedPinLocation: MutableState<LatLng?>
+    showPinInfoDialog: MutableState<Boolean>
 ) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     val username = remember {mutableStateOf("")}
     val showUsernameDialog = remember { mutableStateOf(false) }
-
     val startDestination = if (isLoggedIn.value) "main" else "login"
-
+    val selectedMapPin = remember { mutableStateOf<MapPin?>(null)}
 
     LaunchedEffect(key1 = isLoggedIn.value) {
         if (isLoggedIn.value) {
@@ -233,8 +234,12 @@ fun MainScreen(
                 enterTransition = { slideInFromRight() },
                 exitTransition = { slideOutToRight() }
             ) {
-                GoogleMapComposable(imageHandler, selectedPinLocation = selectedPinLocation.value, navController = navController)
-                Log.d("selectedPinLocation", "${selectedPinLocation.value}")
+                GoogleMapComposable(
+                    imageHandler,
+                    navController = navController,
+                    showPinInfoDialog = showPinInfoDialog,
+                    selectedMapPin = selectedMapPin
+                )
             }
             composable(
                 "signup") {
@@ -252,8 +257,10 @@ fun MainScreen(
             ) {
                 ProfileScreen(
                     imageHandler = imageHandler,
-                    onPinSelected = { location ->
-                        selectedPinLocation.value = location
+                    onPinSelected = { pin ->
+                        Log.d("PinTracking", "Navigating to map with pin: ${pin.id}")
+                        selectedMapPin.value = pin // Set the selected MapPin
+                        showPinInfoDialog.value = true
                         navController.navigate("main")
                     }
                 )
@@ -263,8 +270,8 @@ fun MainScreen(
                 enterTransition = { slideInFromRight() },
                 exitTransition = { slideOutToRight() }
             ) {
-                SearchScreen(onPinSelected = { selectedLocation ->
-                    selectedPinLocation.value = selectedLocation // Use the passed location
+                SearchScreen(onPinSelected = { selectedPin ->
+                    selectedMapPin.value = selectedPin // Set the selectedMapPin with the whole MapPin object
                     navController.navigate("main")
                 })
             }

@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,7 +60,12 @@ import com.google.firebase.storage.storage
 
 
 @Composable
-fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?, navController: NavController) {
+fun GoogleMapComposable(
+    imageHandler: ImageHandler,
+    navController: NavController,
+    showPinInfoDialog: MutableState<Boolean>,
+    selectedMapPin: MutableState<MapPin?>
+) {
     var showDialog by remember { mutableStateOf(false) }
     var pinTitle by remember { mutableStateOf("") }
     var pinDescription by remember { mutableStateOf("") }
@@ -75,13 +81,13 @@ fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?
     )
     val context = LocalContext.current
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-    var showPinInfoDialog by remember { mutableStateOf(false) }
-    var selectedMapPin by remember { mutableStateOf<MapPin?>(null) }
     var googleMapInstance: GoogleMap? by remember { mutableStateOf(null) }
     var currentLatLngInstance: LatLng? by remember { mutableStateOf(null) }
     var selectedTags by remember { mutableStateOf<List<String>>(emptyList()) }
     val availableTags = listOf("Food", "Art", "Other", "Nature", "Entertainment") //tag list
     var isInitialSetupDone by remember { mutableStateOf(false) }
+    val selectedPinLocation = selectedMapPin.value?.let { LatLng(it.latitude, it.longitude) }
+
 
     fun fetchCurrentUserUsername(onResult: (String) -> Unit) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -107,6 +113,11 @@ fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?
             .addOnFailureListener {
                 onComplete(null) // Handle the failure case
             }
+    }
+
+    LaunchedEffect(Unit) {
+        Log.d("PinTracking", "Started with pin: ${selectedMapPin.value?.id}")
+        Log.d("PinTracking", "Showdialog status: $showPinInfoDialog")
     }
 
     LaunchedEffect(isMapReady, selectedPinLocation) {
@@ -146,8 +157,8 @@ fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?
         googleMap.setOnMarkerClickListener { marker ->
 
             val pinInfo = marker.tag as? PinInfo
-            pinInfo?.let {
-                selectedMapPin = MapPin(
+            pinInfo?.let { it ->
+                selectedMapPin.value = MapPin(
                     title = marker.title ?: "",
                     description = it.description,
                     creatorUsername = it.creatorUsername,
@@ -158,14 +169,14 @@ fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?
                     id = it.id,
                     tags = it.tags
                 )
-                selectedMapPin?.id?.let { mapPinId ->
+                selectedMapPin.value?.id?.let { mapPinId ->
                     fetchUpdatedMapPin(mapPinId) { updatedMapPin ->
                         updatedMapPin?.let {
-                            selectedMapPin = it
-                            showPinInfoDialog = true
+                            selectedMapPin.value = it
                         }
                     }
                 }
+                showPinInfoDialog.value = true
             }
             true
         }
@@ -255,34 +266,32 @@ fun GoogleMapComposable(imageHandler: ImageHandler, selectedPinLocation: LatLng?
         }
     }
 
-    if (showPinInfoDialog) {
-        FirebaseAuth.getInstance().currentUser?.uid?.let { currentUserUid ->
-            selectedMapPin?.let { pin ->
-                PinInfoDialog(
-                    mapPin = pin,
-                    currentUser = currentUserUid,
-                    onDismiss = {
-                        showPinInfoDialog = false
-                    },
-                    onDelete = { pinToDelete ->
-                        deletePin(pinToDelete) {
-                            showPinInfoDialog = false
-                            googleMapInstance?.let { map ->
-                                currentLatLngInstance?.let { latLng ->
-                                    fetchAndDisplayPins(map, latLng, context)
-                                }
+        if (showPinInfoDialog.value && selectedMapPin.value != null) {
+            Log.d("GoogleMapComposable", "Showing info dialog for pin: ${selectedMapPin.value?.id}")
+            FirebaseAuth.getInstance().currentUser?.uid?.let { currentUserUid ->
+            val pin = selectedMapPin.value!!
+            PinInfoDialog(
+                mapPin = pin,
+                currentUser = FirebaseAuth.getInstance().currentUser?.uid ?: "",
+                onDismiss = { showPinInfoDialog.value = false },
+                onDelete = { pinToDelete ->
+                    deletePin(pinToDelete) {
+                        showPinInfoDialog.value = false
+                        googleMapInstance?.let { map ->
+                            currentLatLngInstance?.let { latLng ->
+                                fetchAndDisplayPins(map, latLng, context)
                             }
                         }
-                    },
-                    onLikeToggle = {toggleLikeOnPin(pin, currentUserUid) {updatedPin ->
-                        selectedMapPin = updatedPin
                     }
-                    },
-                    onChatButtonClick = { pin ->
-                        navController.navigate("chatScreen/${pin.id}/${pin.title}")
-                    }
-                )
-            }
+                },
+                onLikeToggle = {toggleLikeOnPin(pin, currentUserUid) {updatedPin ->
+                    selectedMapPin.value = updatedPin
+                }
+                },
+                onChatButtonClick = { pin ->
+                    navController.navigate("chatScreen/${pin.id}/${pin.title}")
+                }
+            )
         }
     }
 
