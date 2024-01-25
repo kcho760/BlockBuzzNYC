@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -27,8 +28,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,7 +45,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
@@ -96,7 +101,8 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
 
     // Define the userFlow outside LaunchedEffect
     val userFlow = flow {
-        val userDoc = FirebaseFirestore.getInstance().collection("users").document(userId).get().await()
+        val userDoc =
+            FirebaseFirestore.getInstance().collection("users").document(userId).get().await()
         val user = userDoc.toObject(User::class.java) ?: User()
         emit(user)
     }
@@ -206,17 +212,39 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                    .clip(RoundedCornerShape(20.dp)) // This will apply rounded corners with a radius of 10dp
-                    .background(Color.LightGray)
+                    .clip(RoundedCornerShape(20.dp)) // Apply rounded corners to the outer box
+                    .background(Color.LightGray) // Background color for the outer box
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    LazyRow {
+                    // Title Box for "Pins" text
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth() // Make the title box stretch to the sides of the outer box
+                            .background(MaterialTheme.colorScheme.secondaryContainer) // Background color for the title box
+                            .padding(8.dp) // Padding inside the title box
+                            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)) // Rounded corners for the title box
+                    ) {
+                        Text(
+                            text = "Pins",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier
+                                .padding(vertical = 8.dp) // Vertical padding for the text
+                                .fillMaxWidth() // Ensure the Text fills the width
+                                .wrapContentWidth(Alignment.CenterHorizontally) // Center the text horizontally within the Text composable
+                        )
+                    }
+
+                    // Rest of the Column content
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp), // Padding for the LazyRow content
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         items(pins) { pin ->
                             PinCard(pin = pin, onPinSelected = {
                                 Log.d("PinTracking", "Pin selected: ${pin.id}, Title: ${pin.title}")
@@ -229,25 +257,39 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
 
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth() // The Box stretches to the end of the parent Box
                     .height(175.dp)
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                    .clip(RoundedCornerShape(20.dp)) // This will apply rounded corners with a radius of 10dp
-                    .background(Color.LightGray)
+                    .padding(horizontal = 8.dp) // Padding is only horizontal to keep the edges of the inner box touching the sides of the outer box
+                    .clip(RoundedCornerShape(20.dp)) // Rounded corners for the outer box
+                    .background(LightGray) // Stylish background color for the outer box
             ) {
-                Row(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column {
-                        user.achievements.let { achievements ->
-                            achievements.forEach { achievement ->
-                                if (achievement.earned) {
-                                    Text(text = achievement.name) // Show each earned achievement
-                                }
-                            }
+                    // The Box for the "Achievements" Text with matching rounded corners on the top
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth() // Fill the width of the parent Column
+                            .background(MaterialTheme.colorScheme.secondaryContainer) // Background color of the Box
+                            .padding(8.dp) // Padding inside the Box around the text
+                            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)), // Apply clip after background to ensure corners are rounded
+                        contentAlignment = Alignment.Center // Center the Text inside the Box
+                    ) {
+                        Text(
+                            text = "Achievements",
+                            style = MaterialTheme.typography.titleMedium, // Apply a medium title style
+                            color = MaterialTheme.colorScheme.onSecondaryContainer, // Text color for better contrast
+                            modifier = Modifier.padding(8.dp) // Padding for the Text inside the Box
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp)) // Space between title and items
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(user.achievements.filter { it.earned }) { achievement ->
+                            AchievementItem(achievement)
                         }
                     }
                 }
@@ -255,6 +297,8 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
         }
     }
 }
+
+
 fun uploadImageToFirebaseStorage(userId: String, imageUri: Uri, onComplete: (String) -> Unit) {
     val storageRef = Firebase.storage.reference.child("profile_pictures/$userId.jpg")
     storageRef.putFile(imageUri)
@@ -312,4 +356,37 @@ fun CountSection(count: Int, label: String) {
         Text(text = count.toString())
         Text(text = label)
     }
+}
+@Composable
+fun AchievementItem(achievement: Achievement) {
+    Card(
+        modifier = Modifier
+            .padding(vertical = 4.dp) // Padding for each item
+            .size(width = 100.dp, height = 100.dp), // Define the size of the card
+        shape = RoundedCornerShape(8.dp), // Rounded corners for the card
+        content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize() // Fill the entire Card with the Column
+                    .padding(8.dp), // Padding inside the Column
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.trophy_icon),
+                    contentDescription = "Achievement",
+                    modifier = Modifier
+                        .size(60.dp)
+                        .align(Alignment.CenterHorizontally),
+                    tint = Color.Unspecified // This will keep the original drawable colors
+                )
+                Spacer(modifier = Modifier.height(4.dp)) // Space between icon and text
+                Text(
+                    text = achievement.name,
+                    style = MaterialTheme.typography.bodySmall, // Use bodySmall or any other available style
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+        }
+    )
 }
