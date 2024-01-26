@@ -32,6 +32,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,6 +92,7 @@ fun GoogleMapComposable(
     var titleErrorMessage by remember { mutableStateOf<String?>(null) }
     var descriptionErrorMessage by remember { mutableStateOf<String?>(null) }
     var tagErrorMessage by remember { mutableStateOf<String?>(null) }
+    var hasCheckedPermissions by rememberSaveable { mutableStateOf(false) }
 
     fun fetchCurrentUserUsername(onResult: (String) -> Unit) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -151,9 +153,16 @@ fun GoogleMapComposable(
         }
     }
 
-    if (!hasPermissions) {
-        PermissionRequestUI(requestMultiplePermissionsLauncher, permissions)
-        return
+    if (!hasCheckedPermissions) {
+        LaunchedEffect(Unit) {
+            hasPermissions = permissions.all {
+                ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+            }
+            if (!hasPermissions) {
+                requestMultiplePermissionsLauncher.launch(permissions.toTypedArray())
+            }
+            hasCheckedPermissions = true
+        }
     }
 
     fun setupGoogleMap(googleMap: GoogleMap) {
