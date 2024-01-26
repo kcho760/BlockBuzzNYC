@@ -81,18 +81,23 @@ fun SearchScreen(onPinSelected: (MapPin) -> Unit) {
                 }
             }
         }
-
-        if (selectedTags.isEmpty() && recentPins.isNotEmpty()) {
-            Text("Recent Pins")
-            LazyColumn() {
-                items(recentPins) { pin ->
-                    PinItem(pin, onClick = {
-                        onPinSelected(pin)
-                    })
+        if (selectedTags.isEmpty()) {
+            if (recentPins.isNotEmpty()) {
+                Text("Recent Pins", style = MaterialTheme.typography.titleLarge)
+                LazyColumn {
+                    items(recentPins) { pin ->
+                        PinItem(pin, onClick = {
+                            onPinSelected(pin)
+                        })
+                    }
+                }
+            } else {
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                    Text("Recent Pins", style = MaterialTheme.typography.titleLarge)
+                    Text("No new pins", style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
-
         LazyColumn {
             items(searchResults) { pin ->
                 PinItem(pin, onClick = {

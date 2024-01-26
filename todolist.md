@@ -24,8 +24,8 @@ Optimization and bug fixes:
 -better pin asset
 -alert messages for achievements
 -check on delay between pin creation and pin showing up on map (fixed?)
--delete pin's chat messages from realtime database
 -permission needed screen always shows for a second
+~~-delete pin's chat messages from realtime database~~
 ~~-ERROR MESSAGES EVERYWHERE~~
 ~~-logging out from profile page causes crash~~
 ~~-pins in profile not showing titles~~
