@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.net.Uri
+import android.os.Bundle
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -54,6 +55,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
+import com.google.firebase.analytics.analytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -658,22 +660,27 @@ fun checkForAchievements(user: User) {
     // Check each criterion and add/update achievements as necessary
     if (user.numberOfPins >= 1 && achievements.none { it.id == "rookiePoster" }) {
         achievements.add(Achievement("rookiePoster", "Rookie Poster", "Create your first pin.", true, Timestamp.now()))
+        logAchievementEvent("rookiePoster")
     }
 
     if (user.numberOfPins >= 5 && achievements.none { it.id == "proPoster" }) {
         achievements.add(Achievement("proPoster", "Pro Poster", "Create 5 pins.", true, Timestamp.now()))
+        logAchievementEvent("proPoster")
     }
 
     if (user.numberOfPins >= 10 && achievements.none { it.id == "masterPoster" }) {
         achievements.add(Achievement("masterPoster", "Master Poster", "Create 10 pins.", true, Timestamp.now()))
+        logAchievementEvent("masterPoster")
     }
 
     if (user.totalLikes >= 10 && achievements.none { it.id == "influencer" }) {
         achievements.add(Achievement("influencer", "Influencer", "Receive 100 likes on your pins.", true, Timestamp.now()))
+        logAchievementEvent("influencer")
     }
 
     if(user.profilePictureUrl != "" && achievements.none { it.id == "profilePic" }) {
         achievements.add(Achievement("profilePic", "Say Cheese", "Upload a profile picture.", true, Timestamp.now()))
+        logAchievementEvent("profilePic")
     }
 
     // Update the user document with the new achievements
@@ -687,3 +694,8 @@ fun updateUserAchievements(userId: String, achievements: List<Achievement>) {
         .addOnFailureListener { e -> Log.e("Achievements", "Error updating achievements.", e) }
 }
 
+fun logAchievementEvent(achievementId: String) {
+    val bundle = Bundle()
+    bundle.putString("achievement_id", achievementId)
+    Firebase.analytics.logEvent("achievement_unlocked", bundle)
+}

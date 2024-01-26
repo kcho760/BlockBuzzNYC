@@ -99,4 +99,6 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     implementation("androidx.compose.material:material-icons-extended:<latest_version>")
+    implementation("com.google.firebase:firebase-inappmessaging-display")
+
 }
