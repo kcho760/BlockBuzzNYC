@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.blockbuzznyc.model.MapPin
 import com.google.firebase.Firebase
+import com.google.firebase.database.database
 import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
 import kotlinx.coroutines.tasks.await
@@ -146,7 +147,22 @@ fun deletePin(mapPin: MapPin, currentUser: String, onSuccess: () -> Unit) {
     Log.d("PinInfoDialog", "Deleting pin with ID ${mapPin.id}")
 
     val db = Firebase.firestore
-    val defaultPhotoUrl = "https://firebasestorage.googleapis.com/v0/b/blockbuzznyc.appspot.com/o/pin_images%2Fnew_york_default.jpg?alt=media&token=969960c8-7df8-4a07-8e6c-e41a419521aa"
+    val defaultPhotoUrl =
+        "https://firebasestorage.googleapis.com/v0/b/blockbuzznyc.appspot.com/o/pin_images%2Fnew_york_default.jpg?alt=media&token=969960c8-7df8-4a07-8e6c-e41a419521aa"
+
+    fun deleteChatForPin(pinId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        val chatRef = Firebase.database.getReference("chats").child(pinId)
+        chatRef.removeValue()
+            .addOnSuccessListener {
+                Log.d("PinInfoDialog", "Chat for pin $pinId successfully deleted")
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                Log.e("PinInfoDialog", "Error deleting chat for pin $pinId", e)
+                onFailure(e)
+            }
+    }
+
 
     fun updateUserTotalLikes(onComplete: () -> Unit) {
         val userRef = db.collection("users").document(currentUser)
@@ -184,7 +200,6 @@ fun deletePin(mapPin: MapPin, currentUser: String, onSuccess: () -> Unit) {
         }
     }
 
-    // Function to update the lastFivePins collection
     // Function to update the lastFivePins collection
     fun updateLastFivePins(onComplete: () -> Unit) {
         db.collection("lastFivePins").get()
@@ -227,16 +242,20 @@ fun deletePin(mapPin: MapPin, currentUser: String, onSuccess: () -> Unit) {
             // Handle case where pin ID is empty
         }
     }
-
-    // Start the delete process by attempting to delete the image first
+// Start the delete process by attempting to delete the image first
     deleteImage {
         deletePinInfo {
-            updateLastFivePins {
-                updateUserTotalLikes(onSuccess) // Call onSuccess after user's total likes are updated
-            }
+            deleteChatForPin(mapPin.id, onSuccess = {
+                updateLastFivePins {
+                    updateUserTotalLikes(onSuccess)
+                }
+            }, onFailure = { e ->
+                Log.e("PinInfoDialog", "Failed to delete chat for pin ${mapPin.id}", e)
+            })
         }
     }
 }
+
 
 fun toggleLikeOnPin(mapPin: MapPin, currentUser: String, onUpdated: (MapPin) -> Unit) {
     val db = Firebase.firestore

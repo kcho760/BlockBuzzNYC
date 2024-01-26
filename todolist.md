@@ -23,10 +23,10 @@ Features
 Optimization and bug fixes:
 -better pin asset
 -alert messages for achievements
--ERROR MESSAGES EVERYWHERE
 -check on delay between pin creation and pin showing up on map (fixed?)
 -delete pin's chat messages from realtime database
 -permission needed screen always shows for a second
+~~-ERROR MESSAGES EVERYWHERE~~
 ~~-logging out from profile page causes crash~~
 ~~-pins in profile not showing titles~~
 ~~-tags in pininfo get smushed in smaller screens~~
