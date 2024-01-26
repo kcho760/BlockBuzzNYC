@@ -71,7 +71,8 @@ fun LoginScreen(
     }
 
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
         Image(
             painter = painterResource(id = R.drawable.background),
@@ -82,7 +83,8 @@ fun LoginScreen(
 
         Column(
             modifier = Modifier
-                .fillMaxSize(),
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -119,6 +121,13 @@ fun LoginScreen(
                         label = { Text("Password") },
                         visualTransformation = PasswordVisualTransformation()
                     )
+                    if (errorMessage != null) {
+                        Text(
+                            text = errorMessage ?: "",
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
                     Button(onClick = {
                         loginUser(email, password, onLoginSuccessful, onLoginFailed = { error ->
                             errorMessage = error // Update the error message

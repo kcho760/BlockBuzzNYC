@@ -24,12 +24,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 
 @Composable
-fun SignUpScreen(onSignUpSuccessful: () -> Unit) {
+fun SignUpScreen(
+    navController: NavController,
+    onSignUpSuccessful: () -> Unit
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -83,6 +87,14 @@ fun SignUpScreen(onSignUpSuccessful: () -> Unit) {
                     onValueChange = { username = it },
                     label = { Text("Username") }
                 )
+                Button(
+                    onClick = {
+                        navController.popBackStack()
+                    },
+                    modifier = Modifier.padding(top = 16.dp)
+                ) {
+                    Text("Back to Login")
+                }
                 Button(onClick = {
                     registerUser(
                         email = email,

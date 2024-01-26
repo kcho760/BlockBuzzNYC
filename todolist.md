@@ -21,13 +21,13 @@ Features
         ~~delete pins (only for the user)~~
 
 Optimization and bug fixes:
-    -better pin asset
-    -logging out from profile page causes crash
-    -alert messages for achievements
-    -ERROR MESSAGES EVERYWHERE
-    -check on delay between pin creation and pin showing up on map (fixed?)
-    -delete pin's chat messages from realtime database
-    -permission needed screen always shows for a second
+-better pin asset
+-alert messages for achievements
+-ERROR MESSAGES EVERYWHERE
+-check on delay between pin creation and pin showing up on map (fixed?)
+-delete pin's chat messages from realtime database
+-permission needed screen always shows for a second
+~~-logging out from profile page causes crash~~
 ~~-pins in profile not showing titles~~
 ~~-tags in pininfo get smushed in smaller screens~~
 ~~-deletion cleanup~~

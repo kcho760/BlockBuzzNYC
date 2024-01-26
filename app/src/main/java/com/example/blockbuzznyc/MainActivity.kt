@@ -241,15 +241,15 @@ fun MainScreen(
                     selectedMapPin = selectedMapPin
                 )
             }
-            composable(
-                "signup") {
-                SignUpScreen {
+            composable("signup") {
+                SignUpScreen(navController = navController) {
                     isLoggedIn.value = true
                     navController.navigate("main") {
                         popUpTo("signup") { inclusive = true }
                     }
                 }
             }
+
             composable(
                 "profile",
                 enterTransition = { slideInFromLeft() },
