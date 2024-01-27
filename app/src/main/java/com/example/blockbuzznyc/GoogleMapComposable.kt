@@ -54,6 +54,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
@@ -218,6 +219,14 @@ fun GoogleMapComposable(
                         mapView.onCreate(null)
                         mapView.getMapAsync { googleMap ->
                             googleMapInstance = googleMap
+                            val success = googleMap.setMapStyle(
+                                MapStyleOptions.loadRawResourceStyle(
+                                    context, R.raw.map_style_dark_mode
+                                )
+                            )
+                            if (!success) {
+                                Log.e("GoogleMapComposable", "Style parsing failed.")
+                            }
                             setupGoogleMap(googleMap)
                             isMapReady = true
 

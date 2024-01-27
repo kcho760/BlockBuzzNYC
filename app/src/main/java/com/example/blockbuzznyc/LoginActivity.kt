@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -97,25 +98,26 @@ fun LoginScreen(
                 modifier = Modifier
                     .padding(16.dp)
                     .background(
-                        MaterialTheme.colorScheme.surface,
+                        MaterialTheme.colorScheme.secondary,
                         RoundedCornerShape(12.dp)
                     ) // Apply background with rounded corners
                     .border(2.dp, Color.Black, RoundedCornerShape(12.dp)) // Then apply the border
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Add padding here to create space between the border and the content
                 Column(
                     modifier = Modifier.padding(16.dp), // This is the padding inside the Box
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     TextField(
+                        modifier = Modifier.border(1.dp, Color.Black),
                         value = email,
                         onValueChange = { email = it },
                         label = { Text("Email") }
                     )
                     TextField(
+                        modifier = Modifier.border(1.dp, Color.Black),
                         value = password,
                         onValueChange = { password = it },
                         label = { Text("Password") },
@@ -128,37 +130,49 @@ fun LoginScreen(
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
                     }
-                    Button(onClick = {
-                        loginUser(email, password, onLoginSuccessful, onLoginFailed = { error ->
-                            errorMessage = error // Update the error message
-                        })
-                    }) {
-                        Text("Login")
-                    }
-                    Button(onClick = {
-                        loginUser(
-                            "dev@gmail.com",
-                            "password",
-                            onLoginSuccessful,
-                            onLoginFailed = { error ->
+                    Button(
+                        onClick = {
+                            loginUser(email, password, onLoginSuccessful, onLoginFailed = { error ->
                                 errorMessage = error // Update the error message
                             })
-                    }) {
-                        Text("Dev Login")
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                    ) {
+                        Text("Login", color = MaterialTheme.colorScheme.onTertiary)
                     }
-                    Button(onClick = {
-                        googleSignIn(
-                            context = context,
-                            onLoginSuccessful = onLoginSuccessful,
-                            onLoginFailed = { error -> errorMessage = error },
-                            googleSignInLauncher = googleSignInLauncher
-                        )
-                    }) {
-                        Text("Sign in with Google")
+                    Button(
+                        onClick = {
+                            loginUser(
+                                "dev@gmail.com",
+                                "password",
+                                onLoginSuccessful,
+                                onLoginFailed = { error ->
+                                    errorMessage = error // Update the error message
+                                })
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                    ) {
+                        Text("Dev Login", color = MaterialTheme.colorScheme.onTertiary)
+                    }
+                    Button(
+                        onClick = {
+                            googleSignIn(
+                                context = context,
+                                onLoginSuccessful = onLoginSuccessful,
+                                onLoginFailed = { error -> errorMessage = error },
+                                googleSignInLauncher = googleSignInLauncher
+                            )
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                    ) {
+                        Text("Sign in with Google", color = MaterialTheme.colorScheme.onTertiary)
                     }
 
-                    Button(onClick = { navController.navigate("signup") }) {
-                        Text("Don't have an account?\nSign up!", textAlign = TextAlign.Center)
+                    Button(
+                        onClick = { navController.navigate("signup") },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                    ) {
+                        Text("Don't have an account?\nSign up!", textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onTertiary)
                     }
                 }
             }

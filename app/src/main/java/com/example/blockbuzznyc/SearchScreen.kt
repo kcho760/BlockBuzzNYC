@@ -94,7 +94,7 @@ fun SearchScreen(onPinSelected: (MapPin) -> Unit) {
         if (selectedTags.isEmpty()) {
             if (recentPins.isNotEmpty()) {
                 // Display recent pins in a grid
-                Text("Recent Pins", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(8.dp))
+                Text("Recent Pins",color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(8.dp))
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(count = 2),
                     modifier = Modifier.fillMaxWidth(),
@@ -121,7 +121,9 @@ fun SearchScreen(onPinSelected: (MapPin) -> Unit) {
             // Display search results in a grid
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp), // Add horizontal padding between cells
+                verticalArrangement = Arrangement.spacedBy(8.dp),   // Add vertical padding between cells
             ) {
                 items(searchResults) { pin ->
                     PinItem(pin, onClick = {
@@ -169,7 +171,7 @@ fun TagButton(tag: String, isSelected: Boolean, onSelectionChanged: (Boolean) ->
 
     Surface(
         modifier = Modifier
-            .border(.5.dp, MaterialTheme.colorScheme.onPrimary, RoundedCornerShape(50))
+            .border(.5.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(50))
             .clip(RoundedCornerShape(50)),
         color = backgroundColor
     ) {
@@ -256,9 +258,9 @@ fun ChipView(tag: String) {
         Text(
             text = tag,
             modifier = Modifier
-                .border(.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50))
+                .border(.5.dp, MaterialTheme.colorScheme.onPrimary, RoundedCornerShape(50))
                 .padding(8.dp),
-            color = MaterialTheme.colorScheme.onSecondary
+            color = MaterialTheme.colorScheme.onPrimary
         )
     }
 }

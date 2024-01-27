@@ -135,12 +135,13 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
             // Username
             Text(
                 text = user.username,
+                color = MaterialTheme.colorScheme.tertiary, // This sets the text color to your primary color
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = MaterialTheme.typography.titleLarge.fontSize * 1.25f
+                    fontSize = MaterialTheme.typography.titleLarge.fontSize * 1.25f,
                 )
-
             )
+
 
 //            Spacer(modifier = Modifier.height(16.dp))
 
@@ -194,7 +195,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                         .zIndex(1f) // Make sure the icon is above the profile picture
                         .clip(CircleShape)
                         .border(2.dp, Color.Black, CircleShape)
-                        .background(Color.White, CircleShape)
+                        .background(MaterialTheme.colorScheme.tertiary, CircleShape)
                 ) {
                     Icon(
                         imageVector = Icons.Default.CameraAlt,
@@ -226,7 +227,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     CountSection(
                         count = user.totalLikes,
                         label = "Likes"
-                    ) // Updated to use totalLikes
+                    )
                 }
             }
             Box(
@@ -252,7 +253,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                         Text(
                             text = "Pins",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            color = MaterialTheme.colorScheme.onTertiary,
                             modifier = Modifier
                                 .padding(vertical = 8.dp) // Vertical padding for the text
                                 .fillMaxWidth() // Ensure the Text fills the width
@@ -260,7 +261,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                         )
                     }
 
-                    // Rest of the Column content
+                    // Pins content
                     LazyRow(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -302,7 +303,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                         Text(
                             text = "Achievements",
                             style = MaterialTheme.typography.titleMedium, // Apply a medium title style
-                            color = MaterialTheme.colorScheme.onSecondaryContainer, // Text color for better contrast
+                            color = MaterialTheme.colorScheme.onTertiary, // Text color for better contrast
                             modifier = Modifier.padding(8.dp) // Padding for the Text inside the Box
                         )
                     }
@@ -389,11 +390,11 @@ fun CountSection(count: Int, label: String) {
     ) {
         Text(
             text = count.toString(),
-            color = MaterialTheme.colorScheme.onPrimary // Ensure there is contrast
+            color = MaterialTheme.colorScheme.onTertiary // Ensure there is contrast
         )
         Text(
             text = label,
-            color = MaterialTheme.colorScheme.onPrimary // Ensure there is contrast
+            color = MaterialTheme.colorScheme.onTertiary // Ensure there is contrast
         )
     }
 }
@@ -408,7 +409,7 @@ fun AchievementItem(achievement: Achievement) {
             .size(width = 150.dp, height = 110.dp)
             .background(MaterialTheme.colorScheme.background), // Define the size of the card
         shape = RoundedCornerShape(8.dp), // Rounded corners for the card
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.primary), // Background color for the card
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.secondary), // Background color for the card
         content = {
             Column(
                 modifier = Modifier
