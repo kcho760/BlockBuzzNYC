@@ -37,7 +37,7 @@ Optimization and bug fixes:
 ~~-clearing pin fields post creation~~
 ~~-search pin click doesn't open pininfodialog, add to nav host~~
 ~~-don't allow empty fields for title and description in creation~~
-~~-if pin is in last 5 pins and deleted, it should be deleted from firebase collection of lastFivePins~~
+~~-if pin is in last 10 pins and deleted, it should be deleted from firebase collection of lastTenPins~~
 ~~-Google account login~~
 ~~look up ability to use google map functionality such as buisness info~~
 ~~google account login~~

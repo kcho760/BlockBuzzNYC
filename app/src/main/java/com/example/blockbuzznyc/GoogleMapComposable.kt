@@ -550,8 +550,8 @@ fun savePinToFirestore(mapPin: MapPin, userId: String, context: Context, onCompl
         transaction.update(userRef, "numberOfPins", newPinCount)
     }.addOnSuccessListener {
         onComplete(true, newPinRef.id)
-        // Update the last five pins collection
-        updateLastFivePinsCollection(newPinRef.id)
+        // Update the last Ten pins collection
+        updateLastTenPinsCollection(newPinRef.id)
         // Now that the pin has been saved, check for achievements.
         fetchUserAndCheckAchievements(userId, context)
     }.addOnFailureListener { e ->
@@ -638,23 +638,23 @@ fun distanceBetweenPoints(startLatLng: LatLng, endLatLng: LatLng): Float {
 //    googleMap.addMarker(markerOptions)
 //}
 
-fun updateLastFivePinsCollection(newPinId: String) {
+fun updateLastTenPinsCollection(newPinId: String) {
     val db = Firebase.firestore
-    val lastFivePinsRef = db.collection("lastFivePins")
+    val lastTenPinsRef = db.collection("lastTenPins")
 
-    // Fetch the current last five pins
-    lastFivePinsRef.orderBy("createdAt", Query.Direction.DESCENDING).limit(5)
+    // Fetch the current last Ten pins
+    lastTenPinsRef.orderBy("createdAt", Query.Direction.DESCENDING).limit(5)
         .get()
         .addOnSuccessListener { documents ->
             val ids = documents.map { it.id }
 
-            if (ids.size == 5) {
+            if (ids.size == 10) {
                 // Remove the oldest pin ID if there are already 5
-                lastFivePinsRef.document(ids.last()).delete()
+                lastTenPinsRef.document(ids.last()).delete()
             }
 
             // Add the new pin ID
-            lastFivePinsRef.document(newPinId).set(mapOf("createdAt" to Timestamp.now()))
+            lastTenPinsRef.document(newPinId).set(mapOf("createdAt" to Timestamp.now()))
         }
 }
 

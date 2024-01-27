@@ -258,7 +258,7 @@ fun ChipView(tag: String) {
 
 fun fetchRecentPins(onComplete: (List<MapPin>) -> Unit) {
     val db = Firebase.firestore
-    db.collection("lastFivePins")
+    db.collection("lastTenPins")
         .orderBy("createdAt", Query.Direction.DESCENDING)
         .get()
         .addOnSuccessListener { documents ->

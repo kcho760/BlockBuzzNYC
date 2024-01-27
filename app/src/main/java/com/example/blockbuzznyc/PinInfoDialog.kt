@@ -200,28 +200,28 @@ fun deletePin(mapPin: MapPin, currentUser: String, onSuccess: () -> Unit) {
         }
     }
 
-    // Function to update the lastFivePins collection
-    fun updateLastFivePins(onComplete: () -> Unit) {
-        db.collection("lastFivePins").get()
+    // Function to update the lastTenPins collection
+    fun updateLastTenPins(onComplete: () -> Unit) {
+        db.collection("lastTenPins").get()
             .addOnSuccessListener { snapshot ->
                 val pinsList = snapshot.documents.mapNotNull { it.id }
                 if (mapPin.id in pinsList) {
-                    db.collection("lastFivePins").document(mapPin.id).delete()
+                    db.collection("lastTenPins").document(mapPin.id).delete()
                         .addOnSuccessListener {
-                            Log.d("PinInfoDialog", "Pin ID removed from lastFivePins")
+                            Log.d("PinInfoDialog", "Pin ID removed from lastTenPins")
                             onComplete()
                         }
                         .addOnFailureListener { e ->
-                            Log.e("PinInfoDialog", "Error removing pin ID from lastFivePins", e)
-                            // Handle failure in removing the pin ID from lastFivePins
+                            Log.e("PinInfoDialog", "Error removing pin ID from lastTenPins", e)
+                            // Handle failure in removing the pin ID from lastTenPins
                         }
                 } else {
                     onComplete()
                 }
             }
             .addOnFailureListener { e ->
-                Log.e("PinInfoDialog", "Error retrieving lastFivePins", e)
-                // Handle failure in retrieving lastFivePins
+                Log.e("PinInfoDialog", "Error retrieving lastTenPins", e)
+                // Handle failure in retrieving lastTenPins
             }
     }
 
@@ -246,7 +246,7 @@ fun deletePin(mapPin: MapPin, currentUser: String, onSuccess: () -> Unit) {
     deleteImage {
         deletePinInfo {
             deleteChatForPin(mapPin.id, onSuccess = {
-                updateLastFivePins {
+                updateLastTenPins {
                     updateUserTotalLikes(onSuccess)
                 }
             }, onFailure = { e ->
