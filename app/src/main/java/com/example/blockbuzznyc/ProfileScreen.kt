@@ -389,11 +389,11 @@ fun CountSection(count: Int, label: String) {
     ) {
         Text(
             text = count.toString(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant // Ensure there is contrast
+            color = MaterialTheme.colorScheme.onPrimary // Ensure there is contrast
         )
         Text(
             text = label,
-            color = MaterialTheme.colorScheme.onSurfaceVariant // Ensure there is contrast
+            color = MaterialTheme.colorScheme.onPrimary // Ensure there is contrast
         )
     }
 }
@@ -404,6 +404,7 @@ fun AchievementItem(achievement: Achievement) {
     Card(
         modifier = Modifier
             .padding(vertical = 4.dp) // Padding for each item
+            .border(1.dp, Color.Black, RoundedCornerShape(8.dp)) // Border for each item
             .size(width = 150.dp, height = 110.dp)
             .background(MaterialTheme.colorScheme.background), // Define the size of the card
         shape = RoundedCornerShape(8.dp), // Rounded corners for the card

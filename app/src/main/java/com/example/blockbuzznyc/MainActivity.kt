@@ -17,10 +17,12 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.BottomAppBar
@@ -170,7 +172,7 @@ fun MainScreen(
                     title = { Text("BlockBuzzNYC - ${username.value}") }, // Include the user's email in the title
                     colors = TopAppBarDefaults.mediumTopAppBarColors(
                         containerColor = MaterialTheme.colorScheme.tertiary,
-                        titleContentColor = Color.White
+                        titleContentColor = MaterialTheme.colorScheme.onTertiary
                     ),
                     actions = {
                         IconButton(onClick = {
@@ -192,7 +194,10 @@ fun MainScreen(
                     contentColor = Color.White
                 ) {
                     Button(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(8.dp)
+                            .border(3.5.dp, Color.Black, RoundedCornerShape(20.dp)), // Apply rounded corners directly
                         onClick = {
                             navController.navigate("profile") {
                                 popUpTo("profile") {
@@ -206,7 +211,10 @@ fun MainScreen(
                         Text("Profile")
                     }
 
-                    Button(modifier = Modifier.weight(1f),
+                    Button(modifier = Modifier
+                        .weight(1f)
+                        .padding(8.dp)
+                        .border(3.5.dp, Color.Black, RoundedCornerShape(20.dp))                    ,
                         onClick = {
                             navController.navigate("main") {
                                 popUpTo("main") {
@@ -220,7 +228,10 @@ fun MainScreen(
                         Text("Map")
                     }
 
-                    Button(modifier = Modifier.weight(1f),
+                    Button(modifier = Modifier
+                        .weight(1f)
+                        .padding(8.dp)
+                        .border(3.5.dp, Color.Black, RoundedCornerShape(20.dp))                    ,
                         onClick = {
                             navController.navigate("search") {
                                 popUpTo("search") {

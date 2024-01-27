@@ -1,5 +1,6 @@
 package com.example.blockbuzznyc
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +27,7 @@ fun PinCard(pin: MapPin, onPinSelected: (LatLng) -> Unit) {
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .padding(8.dp)
+            .border(.5.dp, MaterialTheme.colorScheme.onPrimary, RoundedCornerShape(8.dp))
             .height(200.dp) // Fixed height for the card
             .width(150.dp) // Fixed width for the card
             .clickable {

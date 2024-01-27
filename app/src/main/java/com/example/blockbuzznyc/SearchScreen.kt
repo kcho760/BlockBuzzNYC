@@ -2,6 +2,7 @@
 package com.example.blockbuzznyc
 
 import android.util.Log
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -95,8 +96,10 @@ fun SearchScreen(onPinSelected: (MapPin) -> Unit) {
                 // Display recent pins in a grid
                 Text("Recent Pins", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(8.dp))
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxWidth()
+                    columns = GridCells.Fixed(count = 2),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp), // Add horizontal padding between cells
+                    verticalArrangement = Arrangement.spacedBy(8.dp),   // Add vertical padding between cells
                 ) {
                     items(recentPins) { pin ->
                         PinItem(pin, onClick = {
@@ -166,6 +169,7 @@ fun TagButton(tag: String, isSelected: Boolean, onSelectionChanged: (Boolean) ->
 
     Surface(
         modifier = Modifier
+            .border(.5.dp, MaterialTheme.colorScheme.onPrimary, RoundedCornerShape(50))
             .clip(RoundedCornerShape(50)),
         color = backgroundColor
     ) {
@@ -188,7 +192,7 @@ fun PinItem(pin: MapPin, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .border(1.dp, MaterialTheme.colorScheme.onPrimary, RoundedCornerShape(4))
             .clickable(onClick = onClick)
             .height(170.dp), // Fixed height for the card
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), // Adds shadow and depth
@@ -245,12 +249,15 @@ fun PinItem(pin: MapPin, onClick: () -> Unit) {
 @Composable
 fun ChipView(tag: String) {
     Surface(
-        modifier = Modifier.clip(RoundedCornerShape(50)),
+        modifier = Modifier
+            .clip(RoundedCornerShape(50)),
         color = MaterialTheme.colorScheme.secondary
     ) {
         Text(
             text = tag,
-            modifier = Modifier.padding(8.dp),
+            modifier = Modifier
+                .border(.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50))
+                .padding(8.dp),
             color = MaterialTheme.colorScheme.onSecondary
         )
     }
