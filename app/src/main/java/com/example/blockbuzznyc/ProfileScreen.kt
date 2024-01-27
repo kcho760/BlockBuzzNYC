@@ -128,9 +128,9 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(4.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Username
             Text(
@@ -149,7 +149,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(8.dp)
                     .offset(x = (25).dp) // Adjust the position as needed
             ) {
                 // Profile Picture Box, which is clickable to pick an image from the gallery
@@ -209,8 +209,8 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp)
-                    .padding(8.dp)
+                    .height(70.dp)
+                    .padding(2.dp)
                     .border(1.dp, Color.Black, RoundedCornerShape(41.dp))
                     .background(MaterialTheme.colorScheme.tertiary, CircleShape)
             ) {
@@ -384,8 +384,8 @@ fun CountSection(count: Int, label: String) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .padding(8.dp)
-            .clip(RoundedCornerShape(10.dp)) // To match your design
+            .padding(4.dp)
+            .clip(RoundedCornerShape(2.dp)) // To match your design
             .background(MaterialTheme.colorScheme.tertiary) // Your themed surface color
     ) {
         Text(

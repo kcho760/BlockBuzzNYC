@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -65,70 +67,100 @@ fun SearchScreen(onPinSelected: (MapPin) -> Unit) {
             }
         }
     }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Horizontal scrolling for tags
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(availableTags) { tag ->
-                TagButton(tag, selectedTags.contains(tag)) { isSelected ->
-                    selectedTags = if (isSelected) {
-                        selectedTags + tag
-                    } else {
-                        selectedTags - tag
-                    }
-                    // Trigger the search with the newly selected tags
-                    coroutineScope.launch {
-                        performTagSearch(selectedTags) { results ->
-                            searchResults = results
+    BoxWithConstraints {
+        val maxWidth = maxWidth
+        Log.d("SearchScreen", "Max width: $maxWidth")
+        val isSingleColumn = maxWidth < 400.dp // Determine if the layout should be single column
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Horizontal scrolling for tags
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(availableTags) { tag ->
+                    TagButton(tag, selectedTags.contains(tag)) { isSelected ->
+                        selectedTags = if (isSelected) {
+                            selectedTags + tag
+                        } else {
+                            selectedTags - tag
+                        }
+                        // Trigger the search with the newly selected tags
+                        coroutineScope.launch {
+                            performTagSearch(selectedTags) { results ->
+                                searchResults = results
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if (selectedTags.isEmpty()) {
-            if (recentPins.isNotEmpty()) {
-                // Display recent pins in a grid
-                Text("Recent Pins",color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(8.dp))
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(count = 2),
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp), // Add horizontal padding between cells
-                    verticalArrangement = Arrangement.spacedBy(8.dp),   // Add vertical padding between cells
-                ) {
-                    items(recentPins) { pin ->
-                        PinItem(pin, onClick = {
-                            onPinSelected(pin)
-                        })
+            if (selectedTags.isEmpty()) {
+                if (recentPins.isNotEmpty()) {
+                    Text(
+                        "Recent Pins",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                    if(isSingleColumn) {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(recentPins) { pin ->
+                                PinItem(pin, onClick = { onPinSelected(pin) })
+                            }
+                        }
+                    }else{
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(count = 2),
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp), // Add horizontal padding between cells
+                            verticalArrangement = Arrangement.spacedBy(8.dp),   // Add vertical padding between cells
+                        ) {
+                            items(recentPins) { pin ->
+                                PinItem(pin, onClick = {
+                                    onPinSelected(pin)
+                                })
+                            }
+                        }
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier.padding(start = 16.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Recent Pins", style = MaterialTheme.typography.titleLarge)
+                        Text("No new pins", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             } else {
-                Column(
-                    modifier = Modifier.padding(start = 16.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("Recent Pins", style = MaterialTheme.typography.titleLarge)
-                    Text("No new pins", style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        } else {
-            // Display search results in a grid
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp), // Add horizontal padding between cells
-                verticalArrangement = Arrangement.spacedBy(8.dp),   // Add vertical padding between cells
-            ) {
-                items(searchResults) { pin ->
-                    PinItem(pin, onClick = {
-                        onPinSelected(pin)
-                    })
+                if(isSingleColumn) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(searchResults) { pin ->
+                            PinItem(pin, onClick = { onPinSelected(pin) })
+                        }
+                    }
+                }else {
+                    // Display search results in a grid
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp), // Add horizontal padding between cells
+                        verticalArrangement = Arrangement.spacedBy(8.dp),   // Add vertical padding between cells
+                    ) {
+                        items(searchResults) { pin ->
+                            PinItem(pin, onClick = {
+                                onPinSelected(pin)
+                            })
+                        }
+                    }
                 }
             }
         }
