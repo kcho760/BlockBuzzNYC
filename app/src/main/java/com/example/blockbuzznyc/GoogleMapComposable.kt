@@ -710,7 +710,7 @@ fun updateUserAchievements(userId: String, achievements: List<Achievement>) {
 fun logAchievementEvent(achievementId: String) {
     val bundle = Bundle()
     bundle.putString("achievement_id", achievementId)
-    Firebase.analytics.logEvent("achievement_unlocked", bundle)
+    Firebase.analytics.logEvent("new_achievement_unlocked", bundle)
 }
 
 fun setUserPropertyForNewAchievement(context: Context, newValue: Boolean) {
@@ -719,14 +719,9 @@ fun setUserPropertyForNewAchievement(context: Context, newValue: Boolean) {
     firebaseAnalytics.setUserProperty("new_achievement_unlocked", propertyValue)
     Log.d("Achievements", "New achievement unlocked. Property set to $propertyValue.")
 
-    // Log an event when the property changes
-    val bundle = Bundle()
-    bundle.putString("new_achievement_unlocked", propertyValue)
-    firebaseAnalytics.logEvent("new_achievement_unlocked", bundle)
-
     // Reset the property after a delay
     Handler(Looper.getMainLooper()).postDelayed({
         firebaseAnalytics.setUserProperty("new_achievement_unlocked", "false") // Reset to "false"
         Log.d("Achievements", "New achievement unlocked. Property set to false.")
-    }, 5000) // Set DELAY_TIME to an appropriate duration
+    }, 50000) // Set DELAY_TIME to an appropriate duration
 }
