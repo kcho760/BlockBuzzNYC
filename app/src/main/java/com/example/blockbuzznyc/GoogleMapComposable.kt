@@ -709,8 +709,8 @@ fun updateUserAchievements(userId: String, achievements: List<Achievement>) {
 
 fun logAchievementEvent(achievementId: String) {
     val bundle = Bundle()
-    bundle.putString("achievement_id", achievementId)
-    Firebase.analytics.logEvent("new_achievement_unlocked", bundle)
+    bundle.putString(FirebaseAnalytics.Param.ACHIEVEMENT_ID, achievementId)
+    Firebase.analytics.logEvent(FirebaseAnalytics.Event.UNLOCK_ACHIEVEMENT, bundle)
 }
 
 fun setUserPropertyForNewAchievement(context: Context, newValue: Boolean) {
