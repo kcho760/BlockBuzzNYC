@@ -122,10 +122,13 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
 
     val user by userFlow.collectAsState(initial = User())
 
-    Surface(modifier = Modifier.fillMaxSize()) {
+    Surface(modifier = Modifier
+        .background(MaterialTheme.colorScheme.background)
+        .fillMaxSize()
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(8.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -154,7 +157,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     modifier = Modifier
                         .size(150.dp)
                         .clip(CircleShape)
-                        .border(2.dp, Color.Gray, CircleShape)
+                        .border(2.dp, Color.Black, CircleShape)
                         .clickable { imagePickerLauncher.launch("image/*") } // This will launch the image picker
                 ) {
                     profilePictureUrl?.let { imageUrl ->
@@ -190,7 +193,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                         .offset(x = (-30).dp, y = 50.dp) // Adjust the position as needed
                         .zIndex(1f) // Make sure the icon is above the profile picture
                         .clip(CircleShape)
-                        .border(2.dp, Color.Gray, CircleShape)
+                        .border(2.dp, Color.Black, CircleShape)
                         .background(Color.White, CircleShape)
                 ) {
                     Icon(
@@ -200,11 +203,14 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     )
                 }
             }
+
+            //section for counts
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp)
                     .padding(8.dp)
+                    .border(1.dp, Color.Black, RoundedCornerShape(41.dp))
                     .background(MaterialTheme.colorScheme.tertiary, CircleShape)
             ) {
                 Row(
@@ -228,7 +234,8 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     .fillMaxWidth()
                     .height(200.dp)
                     .clip(RoundedCornerShape(20.dp)) // Apply rounded corners to the outer box
-                    .background(MaterialTheme.colorScheme.surface) // Background color for the outer box
+                    .border(1.dp, Color.Black, RoundedCornerShape(20.dp))
+                    .background(MaterialTheme.colorScheme.background),
             ) {
                 Column(
                     modifier = Modifier
@@ -238,9 +245,9 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth() // Make the title box stretch to the sides of the outer box
+                            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)) // Rounded corners for the title box
                             .background(MaterialTheme.colorScheme.tertiary) // Background color for the title box
                             .padding(8.dp) // Padding inside the title box
-                            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)) // Rounded corners for the title box
                     ) {
                         Text(
                             text = "Pins",
@@ -272,11 +279,11 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
 
             Box(
                 modifier = Modifier
-                    .fillMaxWidth() // The Box stretches to the end of the parent Box
-                    .height(175.dp)
-                    .padding(horizontal = 8.dp) // Padding is only horizontal to keep the edges of the inner box touching the sides of the outer box
-                    .clip(RoundedCornerShape(20.dp)) // Rounded corners for the outer box
-                    .background(MaterialTheme.colorScheme.surface) // Stylish background color for the outer box
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp)) // Apply rounded corners to the outer box
+                    .height(200.dp)
+                    .border(1.dp, Color.Black, RoundedCornerShape(20.dp))
+                    .background(MaterialTheme.colorScheme.background),
             ) {
                 Column(
                     modifier = Modifier

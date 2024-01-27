@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -168,7 +169,7 @@ fun MainScreen(
                 TopAppBar(
                     title = { Text("BlockBuzzNYC - ${username.value}") }, // Include the user's email in the title
                     colors = TopAppBarDefaults.mediumTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
+                        containerColor = MaterialTheme.colorScheme.tertiary,
                         titleContentColor = Color.White
                     ),
                     actions = {
@@ -187,24 +188,49 @@ fun MainScreen(
         bottomBar = {
             if (isLoggedIn.value) {
                 BottomAppBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = MaterialTheme.colorScheme.tertiary,
                     contentColor = Color.White
                 ) {
-                    Button(modifier = Modifier.weight(1f), onClick = {navController.navigate("profile") {
-                        popUpTo("profile") { inclusive = true }
-                    }}) {
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            navController.navigate("profile") {
+                                popUpTo("profile") {
+                                    inclusive = true}
+                            }
+                        },
+                        colors = buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
+                        )
+                    ) {
                         Text("Profile")
                     }
 
-                    Button(modifier = Modifier.weight(1f), onClick = {navController.navigate("main") {
-                        popUpTo("main") { inclusive = true }
-                    }}) {
+                    Button(modifier = Modifier.weight(1f),
+                        onClick = {
+                            navController.navigate("main") {
+                                popUpTo("main") {
+                                    inclusive = true}
+                            }
+                        },
+                        colors = buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
+                        )
+                    ) {
                         Text("Map")
                     }
 
-                    Button(modifier = Modifier.weight(1f), onClick = {navController.navigate("search") {
-                        popUpTo("search") { inclusive = true }
-                    }}) {
+                    Button(modifier = Modifier.weight(1f),
+                        onClick = {
+                            navController.navigate("search") {
+                                popUpTo("search") {
+                                    inclusive = true}
+                            }
+                        },
+                        colors = buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
+                        )
+                    ) {
                         Text("Search")
                     }
                 }

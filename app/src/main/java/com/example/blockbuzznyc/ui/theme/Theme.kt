@@ -18,8 +18,9 @@ import androidx.core.view.WindowCompat
 // Define the new color palette
 val TextColor = Color(0xFF080505)
 val BackgroundColor = Color(0xFFdedada)
+val secondBackgroundColor = Color(0xFFc4c4c4)
 val PrimaryColor = Color(0xFFbccea8)
-val SecondaryColor = Color(0xFFf28380)
+val SecondaryColor = Color(0xFF7C965E)
 val AccentColor = Color(0xFF84bb85)
 
 // Dark color scheme
@@ -32,7 +33,7 @@ private val DarkColorScheme = darkColorScheme(
     onTertiary = TextColor,
     background = BackgroundColor,
     onBackground = TextColor,
-    surface = BackgroundColor,
+    surface = secondBackgroundColor,
     onSurface = TextColor,
 )
 
@@ -46,7 +47,7 @@ private val LightColorScheme = lightColorScheme(
     onTertiary = TextColor,
     background = BackgroundColor,
     onBackground = TextColor,
-    surface = BackgroundColor,
+    surface = secondBackgroundColor,
     onSurface = TextColor,
 )
 
