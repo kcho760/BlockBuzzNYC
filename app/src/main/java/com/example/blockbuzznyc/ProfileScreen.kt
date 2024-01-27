@@ -2,6 +2,7 @@
 
 package com.example.blockbuzznyc
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -47,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -78,13 +80,17 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
     var profilePictureUrl by remember { mutableStateOf<String?>(null) }
     var refreshToggle by remember { mutableStateOf(false) }
     val pins by getUserPins(userId).collectAsState(initial = emptyList())
+    val context = LocalContext.current
 
     //pick image from gallery for profile pic
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            uploadProfilePicture(userId, it,
+            uploadProfilePicture(
+                userId = userId,
+                imageUri = it,
+                context = context, // Pass the context here
                 onSuccess = { imageUrl ->
                     profilePictureUrl = imageUrl
                     updateUserProfilePicture(userId, imageUrl) {
@@ -191,7 +197,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     .fillMaxWidth()
                     .height(100.dp)
                     .padding(8.dp)
-                    .background(Color.LightGray, CircleShape)
+                    .background(LightGray, CircleShape)
             ) {
                 Row(
                     modifier = Modifier
@@ -214,7 +220,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     .fillMaxWidth()
                     .height(200.dp)
                     .clip(RoundedCornerShape(20.dp)) // Apply rounded corners to the outer box
-                    .background(Color.LightGray) // Background color for the outer box
+                    .background(LightGray) // Background color for the outer box
             ) {
                 Column(
                     modifier = Modifier
@@ -312,13 +318,19 @@ fun uploadImageToFirebaseStorage(userId: String, imageUri: Uri, onComplete: (Str
             // Handle any errors
         }
 }
-fun uploadProfilePicture(userId: String, imageUri: Uri, onSuccess: (String) -> Unit, onFailure: () -> Unit) {
+fun uploadProfilePicture(
+    userId: String,
+    imageUri: Uri,
+    context: Context, // Add this parameter
+    onSuccess: (String) -> Unit,
+    onFailure: () -> Unit
+) {
     val storageRef = Firebase.storage.reference.child("profile_pictures/$userId.jpg")
     storageRef.putFile(imageUri)
         .addOnSuccessListener { taskSnapshot ->
             taskSnapshot.metadata?.reference?.downloadUrl?.addOnSuccessListener { uri ->
                 onSuccess(uri.toString())
-                fetchUserAndCheckAchievements(userId)
+                fetchUserAndCheckAchievements(userId, context)
             }
                 ?.addOnFailureListener {
                     // Could not get the download URL

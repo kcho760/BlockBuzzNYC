@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -55,6 +57,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.analytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -499,7 +502,7 @@ fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri?, googleMap: GoogleMap, cu
     if (imageUri == null || imageUri.toString().startsWith("gs://")) {
         // Use default photo URL if no image is selected or if the imageUri is a direct Firebase Storage reference
         val updatedMapPin = mapPin.copy(photoUrl = defaultPhotoUrl, creatorUserId = userId)
-        savePinToFirestore(updatedMapPin, userId) { success, newPinId ->
+        savePinToFirestore(updatedMapPin, userId, context) { success, newPinId ->
             if (success) {
                 updatedMapPin.id = newPinId
                 fetchAndDisplayPins(googleMap, currentLatLng, context)
@@ -516,7 +519,7 @@ fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri?, googleMap: GoogleMap, cu
         uploadTask.addOnSuccessListener { taskSnapshot ->
             taskSnapshot.storage.downloadUrl.addOnSuccessListener { downloadUri ->
                 val updatedMapPin = mapPin.copy(photoUrl = downloadUri.toString(), creatorUserId = userId)
-                savePinToFirestore(updatedMapPin, userId) { success, newPinId ->
+                savePinToFirestore(updatedMapPin, userId, context) { success, newPinId ->
                     if (success) {
                         updatedMapPin.id = newPinId
                         fetchAndDisplayPins(googleMap, currentLatLng, context)
@@ -530,7 +533,7 @@ fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri?, googleMap: GoogleMap, cu
     }
 }
 
-fun savePinToFirestore(mapPin: MapPin, userId: String, onComplete: (Boolean, String) -> Unit) {
+fun savePinToFirestore(mapPin: MapPin, userId: String, context: Context, onComplete: (Boolean, String) -> Unit) {
     val db = Firebase.firestore
     val userRef = db.collection("users").document(userId)
     val newPinRef = db.collection("pins").document()
@@ -550,25 +553,26 @@ fun savePinToFirestore(mapPin: MapPin, userId: String, onComplete: (Boolean, Str
         // Update the last five pins collection
         updateLastFivePinsCollection(newPinRef.id)
         // Now that the pin has been saved, check for achievements.
-        fetchUserAndCheckAchievements(userId)
+        fetchUserAndCheckAchievements(userId, context)
     }.addOnFailureListener { e ->
         Log.e("SavePin", "Failed to save pin: ${e.message}", e)
         onComplete(false, "")
     }
 }
 
-fun fetchUserAndCheckAchievements(userId: String) {
+fun fetchUserAndCheckAchievements(userId: String, context: Context) {
     val userRef = Firebase.firestore.collection("users").document(userId)
     userRef.get().addOnSuccessListener { documentSnapshot ->
         val user = documentSnapshot.toObject(User::class.java)
         user?.let { user ->
-            // Assuming that checkForAchievements updates the user's achievements
-            checkForAchievements(user)
+            // Now passing 'context' to 'checkForAchievements'
+            checkForAchievements(user, context)
         }
     }.addOnFailureListener { e ->
         Log.e("Achievements", "Failed to fetch user for achievements: ${e.message}", e)
     }
 }
+
 
 data class PinInfo(
     val description: String,
@@ -654,37 +658,46 @@ fun updateLastFivePinsCollection(newPinId: String) {
         }
 }
 
-fun checkForAchievements(user: User) {
+fun checkForAchievements(user: User, context: Context) {
     val achievements = user.achievements.toMutableList()
+    var newAchievementUnlocked = false // Flag to check if a new achievement is unlocked
 
     // Check each criterion and add/update achievements as necessary
     if (user.numberOfPins >= 1 && achievements.none { it.id == "rookiePoster" }) {
         achievements.add(Achievement("rookiePoster", "Rookie Poster", "Create your first pin.", true, Timestamp.now()))
         logAchievementEvent("rookiePoster")
+        newAchievementUnlocked = true
     }
 
     if (user.numberOfPins >= 5 && achievements.none { it.id == "proPoster" }) {
         achievements.add(Achievement("proPoster", "Pro Poster", "Create 5 pins.", true, Timestamp.now()))
         logAchievementEvent("proPoster")
+        newAchievementUnlocked = true
     }
 
     if (user.numberOfPins >= 10 && achievements.none { it.id == "masterPoster" }) {
         achievements.add(Achievement("masterPoster", "Master Poster", "Create 10 pins.", true, Timestamp.now()))
         logAchievementEvent("masterPoster")
+        newAchievementUnlocked = true
     }
 
     if (user.totalLikes >= 10 && achievements.none { it.id == "influencer" }) {
         achievements.add(Achievement("influencer", "Influencer", "Receive 100 likes on your pins.", true, Timestamp.now()))
         logAchievementEvent("influencer")
+        newAchievementUnlocked = true
     }
 
-    if(user.profilePictureUrl != "" && achievements.none { it.id == "profilePic" }) {
-        achievements.add(Achievement("profilePic", "Say Cheese", "Upload a profile picture.", true, Timestamp.now()))
-        logAchievementEvent("profilePic")
-    }
+//    if(user.profilePictureUrl != "" && achievements.none { it.id == "profilePic" }) {
+//        achievements.add(Achievement("profilePic", "Say Cheese", "Upload a profile picture.", true, Timestamp.now()))
+//        logAchievementEvent("profilePic")
+//        newAchievementUnlocked = true
+//    }
 
     // Update the user document with the new achievements
     updateUserAchievements(user.userId, achievements)
+    if (newAchievementUnlocked) {
+        setUserPropertyForNewAchievement(context, true)
+    }
 }
 
 fun updateUserAchievements(userId: String, achievements: List<Achievement>) {
@@ -698,4 +711,22 @@ fun logAchievementEvent(achievementId: String) {
     val bundle = Bundle()
     bundle.putString("achievement_id", achievementId)
     Firebase.analytics.logEvent("achievement_unlocked", bundle)
+}
+
+fun setUserPropertyForNewAchievement(context: Context, newValue: Boolean) {
+    val firebaseAnalytics = FirebaseAnalytics.getInstance(context)
+    val propertyValue = if (newValue) "true" else "false"
+    firebaseAnalytics.setUserProperty("new_achievement_unlocked", propertyValue)
+    Log.d("Achievements", "New achievement unlocked. Property set to $propertyValue.")
+
+    // Log an event when the property changes
+    val bundle = Bundle()
+    bundle.putString("new_achievement_unlocked", propertyValue)
+    firebaseAnalytics.logEvent("new_achievement_unlocked", bundle)
+
+    // Reset the property after a delay
+    Handler(Looper.getMainLooper()).postDelayed({
+        firebaseAnalytics.setUserProperty("new_achievement_unlocked", "false") // Reset to "false"
+        Log.d("Achievements", "New achievement unlocked. Property set to false.")
+    }, 5000) // Set DELAY_TIME to an appropriate duration
 }
