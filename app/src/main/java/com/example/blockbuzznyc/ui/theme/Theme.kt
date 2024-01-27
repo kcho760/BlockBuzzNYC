@@ -16,11 +16,11 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 // Define the new color palette
-val TextColor = Color(0xFF02040d)
-val BackgroundColor = Color(0xFFF6F9FE)
-val PrimaryColor = Color(0xFF4E6CE7)
-val SecondaryColor = Color(0xFF8C9DE8)
-val AccentColor = Color(0xFF536FEC)
+val TextColor = Color(0xFF080505)
+val BackgroundColor = Color(0xFFdedada)
+val PrimaryColor = Color(0xFFbccea8)
+val SecondaryColor = Color(0xFFf28380)
+val AccentColor = Color(0xFF84bb85)
 
 // Dark color scheme
 private val DarkColorScheme = darkColorScheme(
@@ -75,7 +75,7 @@ fun BlockBuzzNYCTheme(
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = LightColorScheme,
         content = content,
     )
 }

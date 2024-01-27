@@ -8,14 +8,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,9 +31,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.blockbuzznyc.model.MapPin
@@ -57,8 +64,9 @@ fun SearchScreen(onPinSelected: (MapPin) -> Unit) {
             }
         }
     }
-    Column(modifier = Modifier.fillMaxWidth()) {
-        // Replace FlowRow with LazyRow for horizontal scrolling
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Horizontal scrolling for tags
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -81,10 +89,15 @@ fun SearchScreen(onPinSelected: (MapPin) -> Unit) {
                 }
             }
         }
+
         if (selectedTags.isEmpty()) {
             if (recentPins.isNotEmpty()) {
-                Text("Recent Pins", style = MaterialTheme.typography.titleLarge)
-                LazyColumn {
+                // Display recent pins in a grid
+                Text("Recent Pins", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(8.dp))
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     items(recentPins) { pin ->
                         PinItem(pin, onClick = {
                             onPinSelected(pin)
@@ -92,21 +105,31 @@ fun SearchScreen(onPinSelected: (MapPin) -> Unit) {
                     }
                 }
             } else {
-                Column(modifier = Modifier.padding(start = 16.dp)) {
+                Column(
+                    modifier = Modifier.padding(start = 16.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text("Recent Pins", style = MaterialTheme.typography.titleLarge)
                     Text("No new pins", style = MaterialTheme.typography.bodyMedium)
                 }
             }
-        }
-        LazyColumn {
-            items(searchResults) { pin ->
-                PinItem(pin, onClick = {
-                    onPinSelected(pin)
-                })
+        } else {
+            // Display search results in a grid
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(searchResults) { pin ->
+                    PinItem(pin, onClick = {
+                        onPinSelected(pin)
+                    })
+                }
             }
         }
     }
 }
+
 fun performTagSearch(selectedTags: List<String>, onSearchResults: (List<MapPin>) -> Unit) {
     if (selectedTags.isEmpty()) {
         onSearchResults(emptyList())
@@ -139,7 +162,7 @@ fun performTagSearch(selectedTags: List<String>, onSearchResults: (List<MapPin>)
 
 @Composable
 fun TagButton(tag: String, isSelected: Boolean, onSelectionChanged: (Boolean) -> Unit) {
-    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
 
     Surface(
         modifier = Modifier
@@ -158,6 +181,7 @@ fun TagButton(tag: String, isSelected: Boolean, onSelectionChanged: (Boolean) ->
 
 
 
+//@OptIn(ExperimentalLayoutApi::class)
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PinItem(pin: MapPin, onClick: () -> Unit) {
@@ -166,19 +190,39 @@ fun PinItem(pin: MapPin, onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(8.dp)
             .clickable(onClick = onClick)
+            .height(170.dp), // Fixed height for the card
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), // Adds shadow and depth
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiary)
     ) {
-        Row(modifier = Modifier.padding(16.dp)) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 16.dp) // Give some space between the text and the image
             ) {
-                Text(text = pin.title)
-                Text(text = pin.description)
+                Text(
+                    text = pin.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onTertiary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = pin.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.7f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
                 FlowRow(
-                    modifier = Modifier.padding(top = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier = Modifier.padding(top = 8.dp),
+                    Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+
                 ) {
                     pin.tags.forEach { tag ->
                         ChipView(tag)
@@ -190,12 +234,13 @@ fun PinItem(pin: MapPin, onClick: () -> Unit) {
                 contentDescription = "Pin Image",
                 modifier = Modifier
                     .size(100.dp) // Set the size of the image
-                    .clip(RoundedCornerShape(8.dp)), // Optional: if you want rounded corners for the image
+                    .clip(RoundedCornerShape(8.dp)), // Rounded corners for the image
                 contentScale = ContentScale.Crop // Crop the image if not fully inside the bounds
             )
         }
     }
 }
+
 
 @Composable
 fun ChipView(tag: String) {
@@ -249,3 +294,4 @@ fun fetchPinsByIds(pinIds: List<String>, onComplete: (List<MapPin>) -> Unit) {
         onComplete(emptyList())
     }
 }
+

@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,10 +47,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
@@ -129,9 +130,16 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // Username
-            Text(text = "Username: ${user.username}")
+            Text(
+                text = user.username,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = MaterialTheme.typography.titleLarge.fontSize * 1.25f
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            )
+
+//            Spacer(modifier = Modifier.height(16.dp))
 
             // Profile Picture Row
             Row(
@@ -197,7 +205,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     .fillMaxWidth()
                     .height(100.dp)
                     .padding(8.dp)
-                    .background(LightGray, CircleShape)
+                    .background(MaterialTheme.colorScheme.tertiary, CircleShape)
             ) {
                 Row(
                     modifier = Modifier
@@ -220,7 +228,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     .fillMaxWidth()
                     .height(200.dp)
                     .clip(RoundedCornerShape(20.dp)) // Apply rounded corners to the outer box
-                    .background(LightGray) // Background color for the outer box
+                    .background(MaterialTheme.colorScheme.surface) // Background color for the outer box
             ) {
                 Column(
                     modifier = Modifier
@@ -230,7 +238,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth() // Make the title box stretch to the sides of the outer box
-                            .background(MaterialTheme.colorScheme.secondaryContainer) // Background color for the title box
+                            .background(MaterialTheme.colorScheme.tertiary) // Background color for the title box
                             .padding(8.dp) // Padding inside the title box
                             .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)) // Rounded corners for the title box
                     ) {
@@ -268,7 +276,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     .height(175.dp)
                     .padding(horizontal = 8.dp) // Padding is only horizontal to keep the edges of the inner box touching the sides of the outer box
                     .clip(RoundedCornerShape(20.dp)) // Rounded corners for the outer box
-                    .background(LightGray) // Stylish background color for the outer box
+                    .background(MaterialTheme.colorScheme.surface) // Stylish background color for the outer box
             ) {
                 Column(
                     modifier = Modifier
@@ -279,7 +287,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth() // Fill the width of the parent Column
-                            .background(MaterialTheme.colorScheme.secondaryContainer) // Background color of the Box
+                            .background(MaterialTheme.colorScheme.tertiary) // Background color of the Box
                             .padding(8.dp) // Padding inside the Box around the text
                             .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)), // Apply clip after background to ensure corners are rounded
                         contentAlignment = Alignment.Center // Center the Text inside the Box
@@ -365,18 +373,34 @@ fun getUserPins(userId: String): Flow<List<MapPin>> = flow {
 
 @Composable
 fun CountSection(count: Int, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = count.toString())
-        Text(text = label)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .padding(8.dp)
+            .clip(RoundedCornerShape(10.dp)) // To match your design
+            .background(MaterialTheme.colorScheme.tertiary) // Your themed surface color
+    ) {
+        Text(
+            text = count.toString(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant // Ensure there is contrast
+        )
+        Text(
+            text = label,
+            color = MaterialTheme.colorScheme.onSurfaceVariant // Ensure there is contrast
+        )
     }
 }
+
+
 @Composable
 fun AchievementItem(achievement: Achievement) {
     Card(
         modifier = Modifier
             .padding(vertical = 4.dp) // Padding for each item
-            .size(width = 150.dp, height = 110.dp), // Define the size of the card
+            .size(width = 150.dp, height = 110.dp)
+            .background(MaterialTheme.colorScheme.background), // Define the size of the card
         shape = RoundedCornerShape(8.dp), // Rounded corners for the card
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.primary), // Background color for the card
         content = {
             Column(
                 modifier = Modifier
@@ -406,6 +430,6 @@ fun AchievementItem(achievement: Achievement) {
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
-        }
+        },
     )
 }
