@@ -3,16 +3,14 @@ package com.example.blockbuzznyc
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -27,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -50,9 +49,9 @@ fun PinInfoDialog(
     onLikeToggle: (MapPin) -> Unit,
     onChatButtonClick: (MapPin) -> Unit
 ) {
-    var creatorProfilePictureUrl by remember { mutableStateOf<String?>(null) }
-
     if (mapPin != null) {
+        var creatorProfilePictureUrl by remember { mutableStateOf<String?>(null) }
+
         LaunchedEffect(key1 = mapPin.creatorUserId) {
             val user = getUserProfile(mapPin.creatorUserId)
             creatorProfilePictureUrl = user?.profilePictureUrl
@@ -65,20 +64,27 @@ fun PinInfoDialog(
         AlertDialog(
             onDismissRequest = onDismiss,
             title = {
-                Row() {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Image and texts in the column
                     if (creatorProfilePictureUrl != null) {
                         Image(
                             painter = rememberAsyncImagePainter(model = creatorProfilePictureUrl),
                             contentDescription = "Creator Profile Picture",
                             modifier = Modifier
-                                .size(40.dp) // Set the size of the image
-                                .clip(CircleShape) // Clip the image to a circle
-                                .fillMaxSize(), // This will make sure the image fills the circle
-                            contentScale = ContentScale.Crop // This will crop the image to fit the circle while maintaining the aspect ratio
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50))
+                                .fillMaxSize(),
+                            contentScale = ContentScale.Crop
                         )
                         Spacer(modifier = Modifier.size(8.dp))
                     }
-                    Column {
+                    Column(
+                        modifier = Modifier.weight(1f) // This makes the column fill the available space, pushing the button to the end
+                    ) {
                         Text(
                             text = mapPin.title,
                             style = MaterialTheme.typography.headlineSmall.copy(color = Color.Black)
@@ -91,83 +97,103 @@ fun PinInfoDialog(
                         Row {
                             mapPin.tags.forEach { tag ->
                                 Surface(
-                                    shape = RoundedCornerShape(50), // Circular shape
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) // Translucent background
+                                    shape = RoundedCornerShape(50), // Keeps the rounded shape
+                                    color = MaterialTheme.colorScheme.secondary, // Translucent background color
+                                    modifier = Modifier
+                                        .padding(2.dp) // Outer padding for the Surface, adding space between the tags
                                 ) {
                                     Text(
                                         text = tag,
                                         modifier = Modifier
-                                            .padding(horizontal = 8.dp, vertical = 4.dp), // Padding inside the bubble
+                                            .border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50))
+                                            .padding(4.dp), // Additional padding inside the border
                                         textAlign = TextAlign.Center,
                                         style = MaterialTheme.typography.bodySmall.copy(color = Color.Black)
                                     )
                                 }
-                                Spacer(modifier = Modifier.size(4.dp)) // Space between bubbles
+                                Spacer(modifier = Modifier.size(8.dp)) // Space between tags, adjust as necessary
                             }
+
                         }
+                        Text(
+                            text = "Likes: $likesCount",
+                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
+                        )
                     }
-                }
-            },
-            text = {
-                Column {
-                    Text(
-                        text = mapPin.description,
-                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
-                    )
-                    Image(
-                        painter = rememberAsyncImagePainter(model = mapPin.photoUrl),
-                        contentDescription = "Pin Image",
-                        modifier = Modifier.size(100.dp)
-                    )
-                    Text(
-                        text = "Likes: $likesCount",
-                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
-                    )
-                    // Add Like button here within the content
+                    // Like button on the right side
                     if (mapPin.creatorUserId != currentUser) {
-                        Button(onClick = { onLikeToggle(mapPin) }) {
+                        Button(
+                            onClick = { onLikeToggle(mapPin) },
+                            modifier = Modifier
+                                .border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50)),
+                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                        ) {
                             Text(likeButtonText)
                         }
                     }
-                    Button(
-                        onClick = { onChatButtonClick(mapPin) },
-                        modifier = Modifier
-                            .width(150.dp)
-                            .fillMaxWidth() // Ensures the button fills the width but not the height
-                            .padding(top = 8.dp)
-                            .height(IntrinsicSize.Min) // Gives the button intrinsic height
-                            .border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50.dp)), // Example with 12.dp corner radius
-                        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
-                    ) {
-                        Text("Open Chat")
+                    if (mapPin.creatorUserId == currentUser) {
+                        Button(
+                            onClick = { onDelete(mapPin) },
+                            modifier = Modifier.border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50)),
+                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                        ) {
+                            Text("Delete")
+                        }
                     }
                 }
             },
-            confirmButton = {
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .height(IntrinsicSize.Min) // Gives the button intrinsic height
-                        .border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50.dp)), // Example with 12.dp corner radius
-                    colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
-                    ) { Text("Close") }
-            },
-            dismissButton = {
-                if (mapPin.creatorUserId == currentUser) {
-                    Button(
-                        onClick = { onDelete(mapPin) },
+
+            text = {
+                Column {
+                    Row {
+                        Image(
+                            painter = rememberAsyncImagePainter(model = mapPin.photoUrl),
+                            contentDescription = "Pin Image",
+                            modifier = Modifier
+                                .size(100.dp)
+                                .fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Text(
+                            text = mapPin.description,
+                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
+                        )
+                    }
+                    Spacer(modifier = Modifier.size(8.dp))
+                    // Buttons row at the bottom
+                    Row(
                         modifier = Modifier
-                            .padding(top = 8.dp)
-                            .height(IntrinsicSize.Min) // Gives the button intrinsic height
-                            .border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50.dp)), // Example with 12.dp corner radius
-                        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
-                    ) { Text("Delete") }
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Button(
+                            onClick = { onChatButtonClick(mapPin) },
+                            modifier = Modifier.border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50)),
+                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                        ) {
+                            Text("Open Chat")
+                        }
+                        Button(
+                            onClick = onDismiss,
+                            modifier = Modifier.border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50)),
+                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                        ) {
+                            Text("Close")
+                        }
+                    }
+
                 }
-            }
+            },
+            //currently unused due to custom buttons
+            // not sure why deleting causes erros
+            //don't touch
+            confirmButton = {},
+            dismissButton = {}
         )
     }
 }
+
 
 fun deletePin(mapPin: MapPin, currentUser: String, onSuccess: () -> Unit) {
     Log.d("PinInfoDialog", "Deleting pin with ID ${mapPin.id}")

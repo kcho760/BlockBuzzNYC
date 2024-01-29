@@ -2,6 +2,7 @@ things to do
 
 Features
     -Google Places API
+    -swipe to change screens?
     -Main screen ui
         ~~map page~~
         profile page (work in progress)
