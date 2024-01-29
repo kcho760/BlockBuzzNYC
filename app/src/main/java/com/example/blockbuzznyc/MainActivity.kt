@@ -56,7 +56,6 @@ import com.example.blockbuzznyc.model.MapPin
 import com.example.blockbuzznyc.ui.theme.BlockBuzzNYCTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
@@ -69,7 +68,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var imageHandler: ImageHandler
     private lateinit var navController: NavHostController
     private val isLoggedIn = mutableStateOf(FirebaseAuth.getInstance().currentUser != null)
-    private val selectedPinLocation = mutableStateOf<LatLng?>(null)
     private val showPinInfoDialog = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -123,7 +121,7 @@ fun MainScreen(
     activityContext: Context,
     navController: NavHostController,
     isLoggedIn: MutableState<Boolean>,
-    showPinInfoDialog: MutableState<Boolean>
+    showPinInfoDialog: MutableState<Boolean>,
 ) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     val username = remember {mutableStateOf("")}
@@ -162,7 +160,6 @@ fun MainScreen(
             }
         )
     }
-
     Scaffold(
         topBar = {
             if (isLoggedIn.value) {

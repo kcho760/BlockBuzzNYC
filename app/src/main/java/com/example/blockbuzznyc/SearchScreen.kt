@@ -133,8 +133,13 @@ fun SearchScreen(onPinSelected: (MapPin) -> Unit) {
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Recent Pins", style = MaterialTheme.typography.titleLarge)
-                        Text("No new pins", style = MaterialTheme.typography.bodyMedium)
+                        Text("Recent Pins",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onPrimary)
+                        Text("No new pins",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                 }
             } else {

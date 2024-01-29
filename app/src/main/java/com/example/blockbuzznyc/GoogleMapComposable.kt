@@ -5,9 +5,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.net.Uri
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -58,8 +55,6 @@ import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.analytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -72,7 +67,7 @@ fun GoogleMapComposable(
     imageHandler: ImageHandler,
     navController: NavController,
     showPinInfoDialog: MutableState<Boolean>,
-    selectedMapPin: MutableState<MapPin?>
+    selectedMapPin: MutableState<MapPin?>,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var pinTitle by remember { mutableStateOf("") }
@@ -99,6 +94,7 @@ fun GoogleMapComposable(
     var descriptionErrorMessage by remember { mutableStateOf<String?>(null) }
     var tagErrorMessage by remember { mutableStateOf<String?>(null) }
     var hasCheckedPermissions by rememberSaveable { mutableStateOf(false) }
+    var newAchievement by remember { mutableStateOf(null) }
 
     fun fetchCurrentUserUsername(onResult: (String) -> Unit) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -573,7 +569,7 @@ fun fetchUserAndCheckAchievements(userId: String, context: Context) {
     val userRef = Firebase.firestore.collection("users").document(userId)
     userRef.get().addOnSuccessListener { documentSnapshot ->
         val user = documentSnapshot.toObject(User::class.java)
-        user?.let { user ->
+        user?.let {
             // Now passing 'context' to 'checkForAchievements'
             checkForAchievements(user, context)
         }
@@ -669,44 +665,32 @@ fun updateLastTenPinsCollection(newPinId: String) {
 
 fun checkForAchievements(user: User, context: Context) {
     val achievements = user.achievements.toMutableList()
-    var newAchievementUnlocked = false // Flag to check if a new achievement is unlocked
+    var newAchievement: Achievement? = null
 
     // Check each criterion and add/update achievements as necessary
     if (user.numberOfPins >= 1 && achievements.none { it.id == "rookiePoster" }) {
-        achievements.add(Achievement("rookiePoster", "Rookie Poster", "Create your first pin.", true, Timestamp.now()))
-        logAchievementEvent("rookiePoster")
-        newAchievementUnlocked = true
+        newAchievement = Achievement("rookiePoster", "Rookie Poster", "Create your first pin.", true, Timestamp.now())
+        achievements.add(newAchievement)
     }
 
-    if (user.numberOfPins >= 5 && achievements.none { it.id == "proPoster" }) {
-        achievements.add(Achievement("proPoster", "Pro Poster", "Create 5 pins.", true, Timestamp.now()))
-        logAchievementEvent("proPoster")
-        newAchievementUnlocked = true
-    }
-
-    if (user.numberOfPins >= 10 && achievements.none { it.id == "masterPoster" }) {
-        achievements.add(Achievement("masterPoster", "Master Poster", "Create 10 pins.", true, Timestamp.now()))
-        logAchievementEvent("masterPoster")
-        newAchievementUnlocked = true
-    }
-
-    if (user.totalLikes >= 10 && achievements.none { it.id == "influencer" }) {
-        achievements.add(Achievement("influencer", "Influencer", "Receive 100 likes on your pins.", true, Timestamp.now()))
-        logAchievementEvent("influencer")
-        newAchievementUnlocked = true
-    }
-
+//    if (user.numberOfPins >= 5 && achievements.none { it.id == "proPoster" }) {
+//        achievements.add(Achievement("proPoster", "Pro Poster", "Create 5 pins.", true, Timestamp.now()))
+//    }
+//
+//    if (user.numberOfPins >= 10 && achievements.none { it.id == "masterPoster" }) {
+//        achievements.add(Achievement("masterPoster", "Master Poster", "Create 10 pins.", true, Timestamp.now()))
+//    }
+//
+//    if (user.totalLikes >= 10 && achievements.none { it.id == "influencer" }) {
+//        achievements.add(Achievement("influencer", "Influencer", "Receive 100 likes on your pins.", true, Timestamp.now()))
+//    }
+//
 //    if(user.profilePictureUrl != "" && achievements.none { it.id == "profilePic" }) {
 //        achievements.add(Achievement("profilePic", "Say Cheese", "Upload a profile picture.", true, Timestamp.now()))
-//        logAchievementEvent("profilePic")
-//        newAchievementUnlocked = true
 //    }
 
     // Update the user document with the new achievements
     updateUserAchievements(user.userId, achievements)
-    if (newAchievementUnlocked) {
-        setUserPropertyForNewAchievement(context, true)
-    }
 }
 
 fun updateUserAchievements(userId: String, achievements: List<Achievement>) {
@@ -714,23 +698,4 @@ fun updateUserAchievements(userId: String, achievements: List<Achievement>) {
     userRef.update("achievements", achievements)
         .addOnSuccessListener { Log.d("Achievements", "User achievements updated.") }
         .addOnFailureListener { e -> Log.e("Achievements", "Error updating achievements.", e) }
-}
-
-fun logAchievementEvent(achievementId: String) {
-    val bundle = Bundle()
-    bundle.putString(FirebaseAnalytics.Param.ACHIEVEMENT_ID, achievementId)
-    Firebase.analytics.logEvent(FirebaseAnalytics.Event.UNLOCK_ACHIEVEMENT, bundle)
-}
-
-fun setUserPropertyForNewAchievement(context: Context, newValue: Boolean) {
-    val firebaseAnalytics = FirebaseAnalytics.getInstance(context)
-    val propertyValue = if (newValue) "true" else "false"
-    firebaseAnalytics.setUserProperty("new_achievement_unlocked", propertyValue)
-    Log.d("Achievements", "New achievement unlocked. Property set to $propertyValue.")
-
-    // Reset the property after a delay
-    Handler(Looper.getMainLooper()).postDelayed({
-        firebaseAnalytics.setUserProperty("new_achievement_unlocked", "false") // Reset to "false"
-        Log.d("Achievements", "New achievement unlocked. Property set to false.")
-    }, 50000) // Set DELAY_TIME to an appropriate duration
 }
