@@ -198,14 +198,10 @@ fun GoogleMapComposable(
         }
     }
 
-    fun recenterMap(googleMap: GoogleMap) {
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            location?.let {
-                val currentLatLng = LatLng(it.latitude, it.longitude)
-                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
-            }
-        }
+    fun recenterMap(googleMap: GoogleMap, currentLatLngInstance: LatLng) {
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLngInstance, 17f))
     }
+
 
 
     Box {
@@ -274,7 +270,11 @@ fun GoogleMapComposable(
 
             // The Recenter Button
             FloatingActionButton(
-                onClick = { mapViewInstance?.getMapAsync { googleMap -> recenterMap(googleMap) }},
+                onClick = { mapViewInstance?.getMapAsync { googleMap -> currentLatLngInstance?.let {
+                    recenterMap(googleMap,
+                        it
+                    )
+                } }},
                 modifier = Modifier.padding(bottom = 4.dp)
             ) {
                 Icon(Icons.Filled.MyLocation, contentDescription = "Recenter")
