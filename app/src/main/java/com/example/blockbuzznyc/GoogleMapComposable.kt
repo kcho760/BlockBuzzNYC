@@ -45,6 +45,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.blockbuzznyc.SoundPlayer.playChime
 import com.example.blockbuzznyc.model.Achievement
 import com.example.blockbuzznyc.model.MapPin
 import com.google.android.gms.location.LocationServices
@@ -364,7 +365,7 @@ fun GoogleMapComposable(
                                 text = "Description",
                                 color = MaterialTheme.colorScheme.onPrimary
                             ) },
-                        singleLine = true,
+                        singleLine = false,
                         isError = descriptionErrorMessage != null,
                         modifier = Modifier.padding(bottom = 8.dp),
                         textStyle = TextStyle(color = MaterialTheme.colorScheme.onPrimary)
@@ -528,6 +529,7 @@ fun confirmAndCreatePin(mapPin: MapPin, imageUri: Uri?, googleMap: GoogleMap, cu
                 updatedMapPin.id = newPinId
                 fetchAndDisplayPins(googleMap, currentLatLng, context)
                 onComplete(true)
+                playChime(context) // Add this line to play the sound
             } else {
                 onComplete(false)
             }

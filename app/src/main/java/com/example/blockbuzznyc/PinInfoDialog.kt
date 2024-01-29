@@ -2,16 +2,22 @@ package com.example.blockbuzznyc
 
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -125,18 +131,38 @@ fun PinInfoDialog(
                     }
                     Button(
                         onClick = { onChatButtonClick(mapPin) },
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier
+                            .width(150.dp)
+                            .fillMaxWidth() // Ensures the button fills the width but not the height
+                            .padding(top = 8.dp)
+                            .height(IntrinsicSize.Min) // Gives the button intrinsic height
+                            .border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50.dp)), // Example with 12.dp corner radius
+                        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
                     ) {
                         Text("Open Chat")
                     }
                 }
             },
             confirmButton = {
-                Button(onClick = onDismiss) { Text("Close") }
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .height(IntrinsicSize.Min) // Gives the button intrinsic height
+                        .border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50.dp)), // Example with 12.dp corner radius
+                    colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                    ) { Text("Close") }
             },
             dismissButton = {
                 if (mapPin.creatorUserId == currentUser) {
-                    Button(onClick = { onDelete(mapPin) }) { Text("Delete") }
+                    Button(
+                        onClick = { onDelete(mapPin) },
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .height(IntrinsicSize.Min) // Gives the button intrinsic height
+                            .border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50.dp)), // Example with 12.dp corner radius
+                        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                    ) { Text("Delete") }
                 }
             }
         )
