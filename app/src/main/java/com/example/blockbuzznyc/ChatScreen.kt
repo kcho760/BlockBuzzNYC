@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -53,6 +54,7 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
     var messageText by remember { mutableStateOf("") }
     var messages by remember { mutableStateOf(listOf<ChatMessage>()) }
     val context = LocalContext.current
+    val scrollState = rememberLazyListState()
 
     LaunchedEffect(pinId) {
         listenForMessages(pinId) { newMessages ->
@@ -87,7 +89,9 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
                 .fillMaxSize()
                 .padding(8.dp)
         ) {
-            LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            LazyColumn(modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()) {
                 items(messages) { message ->
                     Text(text = "${message.username}: ${message.message}", modifier = Modifier.padding(4.dp), color = MaterialTheme.colorScheme.onPrimary)
                 }
