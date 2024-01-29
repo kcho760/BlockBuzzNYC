@@ -185,7 +185,7 @@ fun MainScreen(
                             navController.navigate("login")
                             isLoggedIn.value = false
                         }) {
-                            Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
+                            Icon(Icons.Filled.ExitToApp, contentDescription = "Logout", tint = MaterialTheme.colorScheme.onTertiary)
                         }
                     }
                 )
