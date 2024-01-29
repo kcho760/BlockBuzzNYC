@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -325,16 +326,26 @@ fun GoogleMapComposable(
         }
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Create a Pin") },
+            title = {
+                Text(
+                    text = "Create a Pin",
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            },
             text = {
                 Column {
                     TextField(
                         value = pinTitle,
                         onValueChange = { pinTitle = it },
-                        label = { Text("Title") },
+                        label = {
+                            Text(
+                                text = "Title",
+                                color = MaterialTheme.colorScheme.onPrimary
+                            ) },
                         singleLine = true,
                         isError = titleErrorMessage != null,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onPrimary)
                     )
                     titleErrorMessage?.let { errorMessage ->
                         Text(
@@ -348,10 +359,15 @@ fun GoogleMapComposable(
                     TextField(
                         value = pinDescription,
                         onValueChange = { pinDescription = it },
-                        label = { Text("Description") },
+                        label = {
+                            Text(
+                                text = "Description",
+                                color = MaterialTheme.colorScheme.onPrimary
+                            ) },
                         singleLine = true,
                         isError = descriptionErrorMessage != null,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onPrimary)
                     )
                     descriptionErrorMessage?.let { errorMessage ->
                         Text(

@@ -71,9 +71,12 @@ fun BlockBuzzNYCTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            // Change from colorScheme.primary to colorScheme.tertiary
+            window.statusBarColor = colorScheme.tertiary.toArgb()
+            // Adjust isAppearanceLightStatusBars as needed for visibility on your tertiary color
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false/* true or false based on your tertiary color's luminance */
         }
+
     }
 
     MaterialTheme(
