@@ -14,11 +14,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -32,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.blockbuzznyc.model.ChatMessage
@@ -50,6 +53,7 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
     var messageText by remember { mutableStateOf("") }
     var messages by remember { mutableStateOf(listOf<ChatMessage>()) }
     val context = LocalContext.current
+
     LaunchedEffect(pinId) {
         listenForMessages(pinId) { newMessages ->
             messages = newMessages
@@ -88,7 +92,6 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
                     Text(text = "${message.username}: ${message.message}", modifier = Modifier.padding(4.dp), color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
-
             Row(
                 modifier = Modifier.padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -97,17 +100,35 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
                     value = messageText,
                     onValueChange = { messageText = it },
                     modifier = Modifier.weight(1f),
-                    label = { Text("Type a message") }
+                    label = {
+                        Text(
+                            "Type a message",
+                            style = TextStyle(
+                                color = MaterialTheme.colorScheme.onSecondary, // Set label (text) color
+                            )
+                        )
+                    },
+                    textStyle = TextStyle(
+                        color = MaterialTheme.colorScheme.onSecondary, // Set text color
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        cursorColor = MaterialTheme.colorScheme.tertiary, // Set text cursor color
+                        focusedBorderColor = MaterialTheme.colorScheme.tertiary, // Set focused outline color
+                        unfocusedBorderColor = MaterialTheme.colorScheme.tertiary, // Set unfocused outline color
+                        focusedLabelColor = MaterialTheme.colorScheme.onSecondary, // Set label (text) color
+                    )
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    sendMessage(pinId, messageText)
-                    SoundPlayer.playSendMessageSound(context) // Play send sound
-                    messageText = ""
-                }) {
+                Button(
+                    onClick = {
+                        sendMessage(pinId, messageText)
+                        SoundPlayer.playSendMessageSound(context) // Play send sound
+                        messageText = ""
+                    },
+                    colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                ) {
                     Text("Send")
                 }
-
             }
         }
     }

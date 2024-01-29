@@ -269,6 +269,7 @@ fun GoogleMapComposable(
             }
 
             // The Recenter Button
+            // adjusted for non-location enabled devices
             FloatingActionButton(
                 onClick = { mapViewInstance?.getMapAsync { googleMap -> currentLatLngInstance?.let {
                     recenterMap(googleMap,
