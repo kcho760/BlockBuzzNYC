@@ -1,6 +1,7 @@
 package com.example.blockbuzznyc
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -13,9 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.outlined.ThumbUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.blockbuzznyc.model.MapPin
@@ -58,7 +65,6 @@ fun PinInfoDialog(
         }
 
         val isLiked = mapPin.likes.contains(currentUser)
-        val likeButtonText = if (isLiked) "Unlike" else "Like"
         val likesCount = mapPin.likes.size
 
         AlertDialog(
@@ -87,8 +93,12 @@ fun PinInfoDialog(
                     ) {
                         Text(
                             text = mapPin.title,
-                            style = MaterialTheme.typography.headlineSmall.copy(color = Color.Black)
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                color = Color.Black,
+                                textDecoration = TextDecoration.Underline // This underlines the text
+                            )
                         )
+
                         Text(
                             text = "By ${mapPin.creatorUsername}",
                             style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
@@ -120,24 +130,51 @@ fun PinInfoDialog(
                             style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
                         )
                     }
-                    // Like button on the right side
                     if (mapPin.creatorUserId != currentUser) {
-                        Button(
-                            onClick = { onLikeToggle(mapPin) },
-                            modifier = Modifier
-                                .border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50)),
-                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                        val icon = if (isLiked) {
+                            Icons.Filled.ThumbUp // Filled icon when liked
+                        } else {
+                            Icons.Outlined.ThumbUp // Outlined icon when not liked
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.onSecondary),
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(4.dp)
                         ) {
-                            Text(likeButtonText)
+                            Button(
+                                onClick = { onLikeToggle(mapPin) },
+                                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary),
+                                modifier = Modifier.clip(CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = "Like",
+                                    modifier = Modifier.size(24.dp),
+                                )
+                            }
                         }
                     }
                     if (mapPin.creatorUserId == currentUser) {
-                        Button(
-                            onClick = { onDelete(mapPin) },
-                            modifier = Modifier.border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50)),
-                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.onSecondary),
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(4.dp)
                         ) {
-                            Text("Delete")
+                            Button(
+                                onClick = { onDelete(mapPin) },
+                                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary),
+                            ) {
+                                // Replace Text with Icon
+                                Icon(
+                                    imageVector = Icons.Filled.Delete,
+                                    contentDescription = "Delete",
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colorScheme.onSecondary // Set the icon tint color as needed
+                                )
+                            }
                         }
                     }
                 }
@@ -150,8 +187,13 @@ fun PinInfoDialog(
                             painter = rememberAsyncImagePainter(model = mapPin.photoUrl),
                             contentDescription = "Pin Image",
                             modifier = Modifier
-                                .size(100.dp)
-                                .fillMaxWidth()
+                                .size(100.dp) // Sets both width and height to 100.dp, making the image square.
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.onSecondary,
+                                    RoundedCornerShape(5)
+                                ),
+                            contentScale = ContentScale.Crop // This will crop the image to fit within the box while maintaining the aspect ratio.
                         )
                         Spacer(modifier = Modifier.size(8.dp))
                         Text(
@@ -167,22 +209,37 @@ fun PinInfoDialog(
                             .padding(8.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        Button(
-                            onClick = { onChatButtonClick(mapPin) },
-                            modifier = Modifier.border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50)),
-                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.onSecondary),
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(4.dp)
                         ) {
-                            Text("Open Chat")
+                            Button(
+                                onClick = { onChatButtonClick(mapPin) },
+                                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary),
+//                                modifier = Modifier
+//                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Text("Open Chat")
+                            }
                         }
-                        Button(
-                            onClick = onDismiss,
-                            modifier = Modifier.border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50)),
-                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.onSecondary),
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(4.dp)
                         ) {
-                            Text("Close")
+                            Button(
+                                onClick = onDismiss,
+                                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary),
+//                                modifier = Modifier
+//                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Text("Close")
+                            }
                         }
                     }
-
                 }
             },
             //currently unused due to custom buttons
