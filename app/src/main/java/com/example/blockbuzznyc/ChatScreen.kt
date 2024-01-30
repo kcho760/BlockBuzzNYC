@@ -1,7 +1,10 @@
 package com.example.blockbuzznyc
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.util.Log
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,6 +21,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,24 +64,51 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
     val listState = rememberLazyListState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    var hasUnseenMessages by remember { mutableStateOf(false) }
+    var lastMessageCountAtBottom by remember { mutableStateOf(0) }
+    var isInitialLoad by remember { mutableStateOf(true) }
 
     LaunchedEffect(pinId) {
-        listenForMessages(pinId) { newMessages ->
-            // Determine if the last message was visible before updating the list
-            val wasAtBottom = listState.layoutInfo.visibleItemsInfo.any {
+        listenForMessages(pinId, context) { newMessages ->
+            val isAtBottom = listState.layoutInfo.visibleItemsInfo.any {
                 it.index == messages.size - 1
             }
 
+            val hadMessages = messages.isNotEmpty()
+            val hasNewMessages = newMessages.size > messages.size
+
+            // Update the message list
             messages = newMessages
 
-            if (wasAtBottom) {
-                coroutineScope.launch {
-                    delay(100) // Small delay for smooth scrolling
-                    listState.animateScrollToItem(messages.size - 1)
+            if (isAtBottom) {
+                // User is at the bottom, update the last message count
+                lastMessageCountAtBottom = messages.size
+                hasUnseenMessages = false
+
+                // If new messages have arrived, auto-scroll to the bottom
+                if (hasNewMessages && hadMessages) {
+                    coroutineScope.launch {
+                        listState.animateScrollToItem(newMessages.size - 1)
+                    }
                 }
+            } else {
+                // User is not at the bottom, check for unseen messages
+                if (newMessages.size > lastMessageCountAtBottom && !isInitialLoad) {
+                    hasUnseenMessages = true
+                }
+            }
+
+            // Handle initial load to scroll to the bottom
+            if (isInitialLoad && newMessages.isNotEmpty()) {
+                coroutineScope.launch {
+                    delay(100)
+                    listState.scrollToItem(index = newMessages.size - 1)
+                }
+                isInitialLoad = false
             }
         }
     }
+
 
     Scaffold(
         topBar = {
@@ -103,28 +134,36 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
                 contentPadding = PaddingValues(bottom = 4.dp) // Adjust this value to match the height of the input field
             ) {
                 items(messages) { message ->
-                    Text(
-                        text = "${message.username}: ${message.message}",
-                        modifier = Modifier.padding(4.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
-            // "Scroll to bottom" button floating on top of the LazyColumn content
-            if (listState.firstVisibleItemIndex < messages.size - 1) {
-                IconButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            listState.animateScrollToItem(messages.size - 1)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp),
+                        horizontalArrangement = if (message.senderId == FirebaseAuth.getInstance().currentUser?.uid) {
+                            Arrangement.End
+                        } else {
+                            Arrangement.Start
                         }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(bottom = 72.dp, end = 16.dp) // Adjust these padding values as needed
-                ) {
-                    Icon(imageVector = Icons.Default.ArrowDownward, contentDescription = "Scroll to bottom")
+                    ) {
+                        Text(
+                            text = "${message.username}: ${message.message}",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .background(
+                                    color = if (message.senderId == FirebaseAuth.getInstance().currentUser?.uid) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.secondary
+                                    },
+                                    shape = MaterialTheme.shapes.medium
+                                )
+                                .padding(8.dp)
+                        )
+                    }
                 }
+
             }
+
             Row(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
@@ -145,9 +184,24 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
                         focusedLabelColor = MaterialTheme.colorScheme.onSecondary,
                     )
                 )
+                // "Scroll to bottom" button floating on top of the LazyColumn content
+                if (listState.firstVisibleItemIndex < messages.size - 1) {
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                listState.animateScrollToItem(messages.size - 1)
+                            }
+                        },
+                        modifier = Modifier
+//                            .padding(bottom = 80.dp, end = 16.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.ArrowDownward, contentDescription = "Scroll to bottom")
+                    }
+
+                }
                 Button(
                     onClick = {
-                        sendMessage(pinId, messageText)
+                        sendMessage(pinId, messageText, context)
                         SoundPlayer.playSendMessageSound(context)
                         messageText = ""
                     },
@@ -156,16 +210,41 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
                     Text("Send")
                 }
             }
+            if (hasUnseenMessages && !isInitialLoad) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 70.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    FloatingActionButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                listState.animateScrollToItem(messages.size - 1)
+                                hasUnseenMessages = false
+                            }
+                        },
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ) {
+                        Text("New Messages", color = MaterialTheme.colorScheme.onSecondary)
+                    }
+                }
+            }
+
         }
     }
 }
 
-fun listenForMessages(pinId: String, onMessageReceived: (List<ChatMessage>) -> Unit) {
+fun listenForMessages(pinId: String, context: Context, onMessageReceived: (List<ChatMessage>) -> Unit) {
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
     val ref = Firebase.database.reference.child("chats/$pinId")
     val messageListener = object : ValueEventListener {
         override fun onDataChange(dataSnapshot: DataSnapshot) {
-            val messages = dataSnapshot.children.mapNotNull { it.getValue(ChatMessage::class.java) }
-            onMessageReceived(messages)
+            val newMessages = dataSnapshot.children.mapNotNull { it.getValue(ChatMessage::class.java) }
+            if (newMessages.any { it.senderId != currentUserId }) {
+                SoundPlayer.playReceiveMessageSound(context)
+            }
+            onMessageReceived(newMessages)
         }
 
         override fun onCancelled(databaseError: DatabaseError) {
@@ -175,7 +254,7 @@ fun listenForMessages(pinId: String, onMessageReceived: (List<ChatMessage>) -> U
     ref.addValueEventListener(messageListener)
 }
 
-fun sendMessage(pinId: String, messageText: String) {
+fun sendMessage(pinId: String, messageText: String, context: Context) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
     // Fetch the username from Firestore
@@ -191,6 +270,8 @@ fun sendMessage(pinId: String, messageText: String) {
 
         // Send the message to Firebase Realtime Database
         val ref = Firebase.database.reference.child("chats/$pinId")
+        SoundPlayer.playSendMessageSound(context)
+
         ref.push().setValue(chatMessage)
     }.addOnFailureListener {
         Log.e("ChatScreen", "Failed to fetch username", it)
