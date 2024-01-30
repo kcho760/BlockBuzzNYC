@@ -31,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +47,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,18 +55,19 @@ import com.google.firebase.ktx.Firebase
 fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
     var messageText by remember { mutableStateOf("") }
     var messages by remember { mutableStateOf(listOf<ChatMessage>()) }
+    val listState = rememberLazyListState()
     val context = LocalContext.current
-    val scrollState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
+    // Listening for new messages
     LaunchedEffect(pinId) {
         listenForMessages(pinId) { newMessages ->
-            messages = newMessages
-        }
-    }
-    LaunchedEffect(messages) {
-        // Check if the latest message was not sent by the current user
-        if (messages.isNotEmpty() && messages.last().senderId != FirebaseAuth.getInstance().currentUser?.uid) {
-            SoundPlayer.playReceiveMessageSound(context) // Play receive sound
+            if (newMessages.size > messages.size) {
+                messages = newMessages
+                coroutineScope.launch {
+                    listState.animateScrollToItem(messages.size - 1)
+                }
+            }
         }
     }
 
