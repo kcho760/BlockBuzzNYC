@@ -131,7 +131,7 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
                     .fillMaxWidth()
                     .height(675.dp),
                 state = listState,
-                contentPadding = PaddingValues(bottom = 4.dp) // Adjust this value to match the height of the input field
+                contentPadding = PaddingValues(top = 120.dp) // Adjust this value to match the height of the input field
             ) {
                 items(messages) { message ->
                     Row(
