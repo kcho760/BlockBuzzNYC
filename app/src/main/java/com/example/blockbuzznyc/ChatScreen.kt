@@ -2,18 +2,19 @@ package com.example.blockbuzznyc
 
 import android.annotation.SuppressLint
 import android.util.Log
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +48,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -59,18 +61,23 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    // Listening for new messages
     LaunchedEffect(pinId) {
         listenForMessages(pinId) { newMessages ->
-            if (newMessages.size > messages.size) {
-                messages = newMessages
+            // Determine if the last message was visible before updating the list
+            val wasAtBottom = listState.layoutInfo.visibleItemsInfo.any {
+                it.index == messages.size - 1
+            }
+
+            messages = newMessages
+
+            if (wasAtBottom) {
                 coroutineScope.launch {
+                    delay(100) // Small delay for smooth scrolling
                     listState.animateScrollToItem(messages.size - 1)
                 }
             }
         }
     }
-
 
     Scaffold(
         topBar = {
@@ -87,49 +94,61 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
             )
         }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp)
-        ) {
-            LazyColumn(modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(675.dp),
+                state = listState,
+                contentPadding = PaddingValues(bottom = 4.dp) // Adjust this value to match the height of the input field
+            ) {
                 items(messages) { message ->
-                    Text(text = "${message.username}: ${message.message}", modifier = Modifier.padding(4.dp), color = MaterialTheme.colorScheme.onPrimary)
+                    Text(
+                        text = "${message.username}: ${message.message}",
+                        modifier = Modifier.padding(4.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+            // "Scroll to bottom" button floating on top of the LazyColumn content
+            if (listState.firstVisibleItemIndex < messages.size - 1) {
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(messages.size - 1)
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = 72.dp, end = 16.dp) // Adjust these padding values as needed
+                ) {
+                    Icon(imageVector = Icons.Default.ArrowDownward, contentDescription = "Scroll to bottom")
                 }
             }
             Row(
-                modifier = Modifier.padding(8.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedTextField(
                     value = messageText,
                     onValueChange = { messageText = it },
                     modifier = Modifier.weight(1f),
-                    label = {
-                        Text(
-                            "Type a message",
-                            style = TextStyle(
-                                color = MaterialTheme.colorScheme.onSecondary, // Set label (text) color
-                            )
-                        )
-                    },
-                    textStyle = TextStyle(
-                        color = MaterialTheme.colorScheme.onSecondary, // Set text color
-                    ),
+                    label = { Text("Type a message") },
+                    textStyle = TextStyle(color = MaterialTheme.colorScheme.onSecondary),
                     colors = OutlinedTextFieldDefaults.colors(
-                        cursorColor = MaterialTheme.colorScheme.tertiary, // Set text cursor color
-                        focusedBorderColor = MaterialTheme.colorScheme.tertiary, // Set focused outline color
-                        unfocusedBorderColor = MaterialTheme.colorScheme.tertiary, // Set unfocused outline color
-                        focusedLabelColor = MaterialTheme.colorScheme.onSecondary, // Set label (text) color
+                        cursorColor = MaterialTheme.colorScheme.tertiary,
+                        focusedBorderColor = MaterialTheme.colorScheme.tertiary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.tertiary,
+                        focusedLabelColor = MaterialTheme.colorScheme.onSecondary,
                     )
                 )
-                Spacer(modifier = Modifier.width(8.dp))
                 Button(
                     onClick = {
                         sendMessage(pinId, messageText)
-                        SoundPlayer.playSendMessageSound(context) // Play send sound
+                        SoundPlayer.playSendMessageSound(context)
                         messageText = ""
                     },
                     colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
@@ -139,9 +158,7 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
             }
         }
     }
-
 }
-
 
 fun listenForMessages(pinId: String, onMessageReceived: (List<ChatMessage>) -> Unit) {
     val ref = Firebase.database.reference.child("chats/$pinId")
