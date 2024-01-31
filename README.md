@@ -1,6 +1,9 @@
 # BlockBuzzNYC
-![Logo](assets/BlockBuzzNYC.png)
-![Main Screen](/assets/BlockBuzzNYC_Screenshot.png)
+<img src="assets/BlockBuzzNYC.png" width="200" alt="Logo">
+<img src="assets/BlockBuzzNYC_Screenshot.png" width="200" alt="Main Screen">
+
+
+
 
 BlockBuzzNYC is a native Android app that leverages the power of JetPack Compose and Firebase to provide users with an interactive, real-time social mapping experience. Users can create and discover location-based pins, engage in live discussions, manage their profiles, and track achievements.
 
