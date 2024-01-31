@@ -6,12 +6,13 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -124,116 +125,119 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
                 ),
             )
         }
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(675.dp),
-                state = listState,
-                contentPadding = PaddingValues(top = 120.dp) // Adjust this value to match the height of the input field
-            ) {
-                items(messages) { message ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp),
-                        horizontalArrangement = if (message.senderId == FirebaseAuth.getInstance().currentUser?.uid) {
-                            Arrangement.End
-                        } else {
-                            Arrangement.Start
-                        }
-                    ) {
-                        Text(
-                            text = "${message.username}: ${message.message}",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier
-                                .background(
-                                    color = if (message.senderId == FirebaseAuth.getInstance().currentUser?.uid) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.secondary
-                                    },
-                                    shape = MaterialTheme.shapes.medium
-                                )
-                                .padding(8.dp)
-                        )
-                    }
-                }
+    ) { innerPadding ->
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)) {
 
-            }
-
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = messageText,
-                    onValueChange = { messageText = it },
-                    modifier = Modifier.weight(1f),
-                    label = { Text("Type a message") },
-                    textStyle = TextStyle(color = MaterialTheme.colorScheme.onSecondary),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        cursorColor = MaterialTheme.colorScheme.tertiary,
-                        focusedBorderColor = MaterialTheme.colorScheme.tertiary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.tertiary,
-                        focusedLabelColor = MaterialTheme.colorScheme.onSecondary,
-                    )
-                )
-                // "Scroll to bottom" button floating on top of the LazyColumn content
-                if (listState.firstVisibleItemIndex < messages.size - 1) {
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                listState.animateScrollToItem(messages.size - 1)
-                            }
-                        },
-                        modifier = Modifier
-//                            .padding(bottom = 80.dp, end = 16.dp)
-                    ) {
-                        Icon(imageVector = Icons.Default.ArrowDownward, contentDescription = "Scroll to bottom")
-                    }
-
-                }
-                Button(
-                    onClick = {
-                        sendMessage(pinId, messageText, context)
-                        SoundPlayer.playSendMessageSound(context)
-                        messageText = ""
-                    },
-                    colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+            Column(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .imePadding(), // This accounts for the IME
+                    state = listState,
                 ) {
-                    Text("Send")
+                    items(messages) { message ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp),
+                            horizontalArrangement = if (message.senderId == FirebaseAuth.getInstance().currentUser?.uid) {
+                                Arrangement.End
+                            } else {
+                                Arrangement.Start
+                            }
+                        ) {
+                            Text(
+                                text = "${message.username}: ${message.message}",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier
+                                    .background(
+                                        color = if (message.senderId == FirebaseAuth.getInstance().currentUser?.uid) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.secondary
+                                        },
+                                        shape = MaterialTheme.shapes.medium
+                                    )
+                                    .padding(8.dp)
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+//                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = messageText,
+                        onValueChange = { messageText = it },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Type a message") },
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSecondary),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            cursorColor = MaterialTheme.colorScheme.tertiary,
+                            focusedBorderColor = MaterialTheme.colorScheme.tertiary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.tertiary,
+                            focusedLabelColor = MaterialTheme.colorScheme.onSecondary,
+                        )
+                    )
+                    if (listState.firstVisibleItemIndex < messages.size - 1) {
+                        IconButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    listState.animateScrollToItem(messages.size - 1)
+                                }
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDownward,
+                                contentDescription = "Scroll to bottom",
+                                modifier = Modifier.size(50.dp),
+                                tint = MaterialTheme.colorScheme.onPrimary // Color of the Icon
+                            )
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            // sendMessage logic here
+                            sendMessage(pinId, messageText, context)
+                            messageText = ""
+                        },
+                        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                    ) {
+                        Text("Send")
+                    }
                 }
             }
+
             if (hasUnseenMessages && !isInitialLoad) {
-                Box(
+                FloatingActionButton(
+                    onClick = {
+                        // Scroll to bottom logic here
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(messages.size - 1)
+                            hasUnseenMessages = false
+                        }
+                    },
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 70.dp),
-                    contentAlignment = Alignment.Center
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary
                 ) {
-                    FloatingActionButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                listState.animateScrollToItem(messages.size - 1)
-                                hasUnseenMessages = false
-                            }
-                        },
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ) {
-                        Text("New Messages", color = MaterialTheme.colorScheme.onSecondary)
-                    }
+                    Text("New Messages")
                 }
             }
-
         }
     }
 }
+
 
 fun listenForMessages(pinId: String, context: Context, onMessageReceived: (List<ChatMessage>) -> Unit) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
