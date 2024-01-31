@@ -237,13 +237,19 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
 
 fun listenForMessages(pinId: String, context: Context, onMessageReceived: (List<ChatMessage>) -> Unit) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+    var lastReceivedMessage: ChatMessage? = null
     val ref = Firebase.database.reference.child("chats/$pinId")
+
     val messageListener = object : ValueEventListener {
         override fun onDataChange(dataSnapshot: DataSnapshot) {
             val newMessages = dataSnapshot.children.mapNotNull { it.getValue(ChatMessage::class.java) }
-            if (newMessages.any { it.senderId != currentUserId }) {
+
+            val latestMessage = newMessages.lastOrNull()
+            if (latestMessage != null && latestMessage.senderId != currentUserId && latestMessage != lastReceivedMessage) {
                 SoundPlayer.playReceiveMessageSound(context)
+                lastReceivedMessage = latestMessage
             }
+
             onMessageReceived(newMessages)
         }
 
@@ -251,8 +257,10 @@ fun listenForMessages(pinId: String, context: Context, onMessageReceived: (List<
             Log.w("ChatScreen", "loadMessages:onCancelled", databaseError.toException())
         }
     }
+
     ref.addValueEventListener(messageListener)
 }
+
 
 fun sendMessage(pinId: String, messageText: String, context: Context) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
