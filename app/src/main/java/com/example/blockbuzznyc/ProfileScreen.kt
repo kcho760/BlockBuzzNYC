@@ -251,7 +251,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                             .padding(8.dp) // Padding inside the title box
                     ) {
                         Text(
-                            text = "Pins",
+                            text = "Your Pins",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onTertiary,
                             modifier = Modifier
