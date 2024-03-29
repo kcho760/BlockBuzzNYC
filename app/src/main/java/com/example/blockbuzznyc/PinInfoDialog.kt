@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.outlined.ThumbUp
@@ -22,6 +23,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -71,6 +73,24 @@ fun PinInfoDialog(
             onDismissRequest = onDismiss,
             title = {
                 Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End, // Align the child (IconButton) to the end
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Your IconButton is already set to be at the end
+                    IconButton(
+                        onClick = onDismiss,
+                        // The size modifier can be omitted, IconButton has a default size which can be adjusted if necessary
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close, // Use the built-in close icon
+                            contentDescription = "Close",
+                            tint = MaterialTheme.colorScheme.onSecondary // Set the tint color as needed
+                        )
+                    }
+                }
+                Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -82,7 +102,11 @@ fun PinInfoDialog(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50))
+                                .border(
+                                    0.5.dp,
+                                    MaterialTheme.colorScheme.onSecondary,
+                                    RoundedCornerShape(50)
+                                )
                                 .fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
@@ -91,13 +115,25 @@ fun PinInfoDialog(
                     Column(
                         modifier = Modifier.weight(1f) // This makes the column fill the available space, pushing the button to the end
                     ) {
-                        Text(
-                            text = mapPin.title,
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                color = Color.Black,
-                                textDecoration = TextDecoration.Underline // This underlines the text
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp, end = 16.dp), // Adjust padding as needed
+                            horizontalArrangement = Arrangement.SpaceBetween, // This pushes the children to opposite ends
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = mapPin.title,
+                                style = MaterialTheme.typography.headlineSmall.copy(
+                                    color = Color.Black,
+                                    textDecoration = TextDecoration.Underline // This underlines the text
+                                ),
+                                modifier = Modifier.weight(1f) // This makes the Text take up the available space, pushing the IconButton to the end
                             )
-                        )
+
+
+                        }
+
 
                         Text(
                             text = "By ${mapPin.creatorUsername}",
@@ -115,7 +151,11 @@ fun PinInfoDialog(
                                     Text(
                                         text = tag,
                                         modifier = Modifier
-                                            .border(0.5.dp, MaterialTheme.colorScheme.onSecondary, RoundedCornerShape(50))
+                                            .border(
+                                                0.5.dp,
+                                                MaterialTheme.colorScheme.onSecondary,
+                                                RoundedCornerShape(50)
+                                            )
                                             .padding(4.dp), // Additional padding inside the border
                                         textAlign = TextAlign.Center,
                                         style = MaterialTheme.typography.bodySmall.copy(color = Color.Black)
@@ -224,21 +264,7 @@ fun PinInfoDialog(
                                 Text("Open Chat")
                             }
                         }
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.onSecondary),
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.padding(4.dp)
-                        ) {
-                            Button(
-                                onClick = onDismiss,
-                                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary),
-//                                modifier = Modifier
-//                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Text("Close")
-                            }
-                        }
+
                     }
                 }
             },
