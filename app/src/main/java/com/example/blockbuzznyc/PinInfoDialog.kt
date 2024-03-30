@@ -17,11 +17,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.outlined.ThumbUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +63,7 @@ fun PinInfoDialog(
 ) {
     if (mapPin != null) {
         var creatorProfilePictureUrl by remember { mutableStateOf<String?>(null) }
+        var showMenu by remember { mutableStateOf(false) }
 
         LaunchedEffect(key1 = mapPin.creatorUserId) {
             val user = getUserProfile(mapPin.creatorUserId)
@@ -197,25 +201,33 @@ fun PinInfoDialog(
                         }
                     }
                     if (mapPin.creatorUserId == currentUser) {
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.onSecondary),
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.padding(4.dp)
-                        ) {
-                            Button(
-                                onClick = { onDelete(mapPin) },
-                                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary),
+                            IconButton(
+                                onClick = { showMenu = !showMenu }
                             ) {
-                                // Replace Text with Icon
                                 Icon(
-                                    imageVector = Icons.Filled.Delete,
-                                    contentDescription = "Delete",
-                                    modifier = Modifier.size(24.dp),
-                                    tint = MaterialTheme.colorScheme.onSecondary // Set the icon tint color as needed
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = "More"
                                 )
                             }
-                        }
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Delete") },
+                                    onClick = {
+                                        onDelete(mapPin)
+                                        showMenu = false
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Filled.Delete,
+                                            contentDescription = "Delete",
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                )
+                            }
                     }
                 }
             },

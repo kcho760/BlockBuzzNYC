@@ -30,14 +30,13 @@ Optimization and bug fixes:
 -Profile Page: Gear icon for settings (change name, delete account)
     -Achievements: Make Clickable to see date recieved and description.
     -Add notification
--Logout Button: Icon or text?
 -Search Page: Fix pin info corners
     Move tags in pin info to bottom
     tag search clear button
 -Pin UI: Tapping Picture expands
     Likes with icon and number
     Open Chat -> Live Chat (current users)
-    Close button -> X
+    ~~Close button -> X~~
     Delete and Edit into Gear box menu
     Edit Pin UI
 -Live Chat:
