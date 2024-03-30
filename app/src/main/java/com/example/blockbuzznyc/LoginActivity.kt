@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -114,15 +115,17 @@ fun LoginScreen(
                         modifier = Modifier.border(1.dp, Color.Black),
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email") }
-                    )
+                        label = { Text("Email") },
+                        textStyle = TextStyle(color = Color.Black),
+                        )
                     TextField(
                         modifier = Modifier.border(1.dp, Color.Black),
                         value = password,
                         onValueChange = { password = it },
                         label = { Text("Password") },
-                        visualTransformation = PasswordVisualTransformation()
-                    )
+                        visualTransformation = PasswordVisualTransformation(),
+                        textStyle = TextStyle(color = Color.Black),
+                        )
                     if (errorMessage != null) {
                         Text(
                             text = errorMessage ?: "",
