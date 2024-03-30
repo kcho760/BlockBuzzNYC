@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -22,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -29,6 +31,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
     navController: NavController,
@@ -50,7 +53,7 @@ fun SignUpScreen(
         Text(
             text = "BlockBuzzNYC - Sign Up",
             style = MaterialTheme.typography.headlineLarge,
-            color = Color.White
+            color = Color.Black
         )
         Box(
             modifier = Modifier
@@ -68,25 +71,29 @@ fun SignUpScreen(
                 TextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text("Email") }
+                    label = { Text("Email") },
+                    textStyle = TextStyle(color = Color.Black),
                 )
                 TextField(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation()
-                )
+                    visualTransformation = PasswordVisualTransformation(),
+                    textStyle = TextStyle(color = Color.Black),
+                    )
                 TextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
                     label = { Text("Confirm Password") },
-                    visualTransformation = PasswordVisualTransformation()
-                )
+                    visualTransformation = PasswordVisualTransformation(),
+                    textStyle = TextStyle(color = Color.Black),
+                    )
                 TextField(
                     value = username,
                     onValueChange = { username = it },
-                    label = { Text("Username") }
-                )
+                    label = { Text("Username") },
+                    textStyle = TextStyle(color = Color.Black),
+                    )
                 Button(
                     onClick = {
                         navController.popBackStack()
