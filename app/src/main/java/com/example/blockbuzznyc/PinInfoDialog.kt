@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.blockbuzznyc.model.MapPin
@@ -208,25 +209,26 @@ fun PinInfoDialog(
                                     imageVector = Icons.Default.MoreVert,
                                     contentDescription = "More"
                                 )
-                            }
-                            DropdownMenu(
-                                expanded = showMenu,
-                                onDismissRequest = { showMenu = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Delete") },
-                                    onClick = {
-                                        onDelete(mapPin)
-                                        showMenu = false
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Filled.Delete,
-                                            contentDescription = "Delete",
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                )
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false },
+                                    offset = DpOffset(x = 0.dp, y = 0.dp)
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Delete") },
+                                        onClick = {
+                                            onDelete(mapPin)
+                                            showMenu = false
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Filled.Delete,
+                                                contentDescription = "Delete",
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    )
+                                }
                             }
                     }
                 }

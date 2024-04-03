@@ -45,7 +45,7 @@ Optimization and bug fixes:
     Fix bottom margin
     Current Active viewers in chat in top bar
 -Map Pin icon -> Custom
--Sign up form and log in text color
+~~-Sign up form and log in text color~~
 
 ~~-permission needed screen always shows for a second~~
 ~~-delete pin's chat messages from realtime database~~
