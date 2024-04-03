@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.outlined.ThumbUp
@@ -224,6 +225,19 @@ fun PinInfoDialog(
                                             Icon(
                                                 imageVector = Icons.Filled.Delete,
                                                 contentDescription = "Delete",
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Edit") },
+                                        onClick = {
+//                                            onEdit(mapPin)
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Default.Edit,
+                                                contentDescription = "Edit",
                                                 modifier = Modifier.size(24.dp)
                                             )
                                         }
