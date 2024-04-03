@@ -2,6 +2,10 @@ package com.example.blockbuzznyc
 
 import android.util.Log
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -11,19 +15,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.example.blockbuzznyc.model.MapPin
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PinEditDialog(
     mapPin: MapPin,
     onUpdate: (MapPin) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    availableTags: List<String> = listOf("Food", "Art", "Other", "Nature", "Entertainment")
 ) {
     var title by remember { mutableStateOf(mapPin.title) }
     var description by remember { mutableStateOf(mapPin.description) }
-    var tags by remember { mutableStateOf(mapPin.tags.joinToString(", ")) }
+    var selectedTags by remember { mutableStateOf(mapPin.tags) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -42,11 +50,19 @@ fun PinEditDialog(
                     onValueChange = { description = it },
                     label = { Text("Description") }
                 )
-                TextField(
-                    value = tags,
-                    onValueChange = { tags = it },
-                    label = { Text("Tags (comma separated)") }
-                )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                ) {
+                    availableTags.forEach { tag ->
+                        TagButton(tag, selectedTags.contains(tag)) { isSelected ->
+                            selectedTags = if (isSelected) {
+                                selectedTags + tag
+                            } else {
+                                selectedTags - tag
+                            }
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -55,7 +71,7 @@ fun PinEditDialog(
                     val updatedPin = mapPin.copy(
                         title = title,
                         description = description,
-                        tags = tags.split(",").map(String::trim)
+                        tags = selectedTags
                     )
                     updatePin(updatedPin)
                     onDismiss()
@@ -72,6 +88,7 @@ fun PinEditDialog(
     )
 }
 
+
 // Function to update the pin in Firebase Firestore
 fun updatePin(mapPin: MapPin) {
     val db = Firebase.firestore
@@ -84,9 +101,4 @@ fun updatePin(mapPin: MapPin) {
     }.addOnFailureListener {
         Log.e("MapPin", "Error updating pin.", it)
     }
-}
-
-// This function should be tied to the edit button click
-fun onEditButtonClick(mapPin: MapPin) {
-    // Trigger the dialog to edit the pin
 }

@@ -37,8 +37,8 @@ Optimization and bug fixes:
     Likes with icon and number
     Open Chat -> Live Chat (current users)
     ~~Close button -> X~~
-    Delete and Edit into Gear box menu
-    Edit Pin UI
+    ~~Delete and Edit into Gear box menu~~
+    ~~Edit Pin UI~~
 -Live Chat:
     Fix TopBar
     Send button -> Icon
