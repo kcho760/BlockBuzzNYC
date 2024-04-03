@@ -73,8 +73,16 @@ fun PinEditDialog(
                         description = description,
                         tags = selectedTags
                     )
-                    updatePin(updatedPin)
-                    onDismiss()
+                    updatePin(updatedPin,
+                        onSuccess = {
+                            onUpdate(it)  // Use 'onUpdate' lambda to propagate the updated pin upward.
+                            onDismiss()
+                        },
+                        onFailure = { e ->
+                            Log.e("PinEditDialog", "Error updating pin: ${e.localizedMessage}", e)
+                            onDismiss() // Optionally dismiss the dialog
+                        }
+                    )
                 }
             ) {
                 Text("Update")
@@ -88,9 +96,8 @@ fun PinEditDialog(
     )
 }
 
-
 // Function to update the pin in Firebase Firestore
-fun updatePin(mapPin: MapPin) {
+fun updatePin(mapPin: MapPin, onSuccess: (MapPin) -> Unit, onFailure: (Exception) -> Unit) {
     val db = Firebase.firestore
     val pinRef = db.collection("pins").document(mapPin.id)
 
@@ -98,7 +105,9 @@ fun updatePin(mapPin: MapPin) {
         transaction.set(pinRef, mapPin)
     }.addOnSuccessListener {
         Log.d("MapPin", "Pin updated successfully.")
-    }.addOnFailureListener {
-        Log.e("MapPin", "Error updating pin.", it)
+        onSuccess(mapPin) // Invoke the success callback
+    }.addOnFailureListener { e ->
+        Log.e("MapPin", "Error updating pin.", e)
+        onFailure(e) // Invoke the failure callback
     }
 }

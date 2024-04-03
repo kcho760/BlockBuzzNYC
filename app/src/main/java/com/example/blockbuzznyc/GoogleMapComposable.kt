@@ -316,16 +316,31 @@ fun GoogleMapComposable(
                 onChatButtonClick = { pin ->
                     navController.navigate("chatScreen/${pin.id}/${pin.title}")
                 },
-                onEdit = { pin ->
-                    showDialog = true
-                    pinTitle = pin.title
-                    pinDescription = pin.description
-                    selectedTags = pin.tags
+                onEdit = { pinToEdit ->
+                    // This should be your actual logic to open the PinEditDialog and handle pin updates
+//                    showDialog = true
+                    pinTitle = pinToEdit.title
+                    pinDescription = pinToEdit.description
+                    selectedTags = pinToEdit.tags
+
+                    // Hypothetical function that updates the pin information and returns the updated pin
+                    updatePin(pinToEdit, onSuccess = { updatedPin ->
+                        selectedMapPin.value = updatedPin
+                        showPinInfoDialog.value = false // Optionally, you might close the dialog and reopen to see changes or let it be for automatic UI update
+
+                        // Optionally, refresh the pins on the map to show changes immediately
+                        googleMapInstance?.let { map ->
+                            currentLatLngInstance?.let { latLng ->
+                                fetchAndDisplayPins(map, latLng, context)
+                            }
+                        }
+                    }, onFailure = { exception ->
+                        Log.e("PinEdit", "Failed to update pin: ${exception.message}", exception)
+                    })
                 }
             )
         }
     }
-
 
 
     if (showDialog) {
