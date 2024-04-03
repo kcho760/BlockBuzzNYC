@@ -315,6 +315,12 @@ fun GoogleMapComposable(
                 },
                 onChatButtonClick = { pin ->
                     navController.navigate("chatScreen/${pin.id}/${pin.title}")
+                },
+                onEdit = { pin ->
+                    showDialog = true
+                    pinTitle = pin.title
+                    pinDescription = pin.description
+                    selectedTags = pin.tags
                 }
             )
         }

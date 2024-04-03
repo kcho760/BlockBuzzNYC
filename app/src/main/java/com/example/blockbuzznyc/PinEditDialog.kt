@@ -21,7 +21,6 @@ fun PinEditDialog(
     onUpdate: (MapPin) -> Unit,
     onDismiss: () -> Unit
 ) {
-    // States for editing fields
     var title by remember { mutableStateOf(mapPin.title) }
     var description by remember { mutableStateOf(mapPin.description) }
     var tags by remember { mutableStateOf(mapPin.tags.joinToString(", ")) }
@@ -48,7 +47,6 @@ fun PinEditDialog(
                     onValueChange = { tags = it },
                     label = { Text("Tags (comma separated)") }
                 )
-                // TODO: Add UI for image editing
             }
         },
         confirmButton = {
@@ -59,7 +57,7 @@ fun PinEditDialog(
                         description = description,
                         tags = tags.split(",").map(String::trim)
                     )
-                    onUpdate(updatedPin)
+                    updatePin(updatedPin)
                     onDismiss()
                 }
             ) {

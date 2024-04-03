@@ -60,6 +60,7 @@ fun PinInfoDialog(
     currentUser: String,
     onDismiss: () -> Unit,
     onDelete: (MapPin) -> Unit,
+    onEdit: (MapPin) -> Unit,
     onLikeToggle: (MapPin) -> Unit,
     onChatButtonClick: (MapPin) -> Unit
 ) {
@@ -71,10 +72,21 @@ fun PinInfoDialog(
             val user = getUserProfile(mapPin.creatorUserId)
             creatorProfilePictureUrl = user?.profilePictureUrl
         }
+        var showEditDialog by remember { mutableStateOf(false) }
 
         val isLiked = mapPin.likes.contains(currentUser)
         val likesCount = mapPin.likes.size
 
+        if (showEditDialog) {
+            PinEditDialog(
+                mapPin = mapPin,
+                onDismiss = { showEditDialog = false },
+                onUpdate = { updatedMapPin ->
+                    onEdit(updatedMapPin)
+                    showEditDialog = false
+                }
+            )
+        }
         AlertDialog(
             onDismissRequest = onDismiss,
             title = {
@@ -232,7 +244,7 @@ fun PinInfoDialog(
                                     DropdownMenuItem(
                                         text = { Text("Edit") },
                                         onClick = {
-//                                            onEdit(mapPin)
+                                            showEditDialog = true
                                         },
                                         leadingIcon = {
                                             Icon(
