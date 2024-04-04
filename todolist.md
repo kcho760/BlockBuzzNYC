@@ -31,8 +31,8 @@ Optimization and bug fixes:
     -Achievements: Make Clickable to see date recieved and description.
     -Add notification
 -Search Page: Fix pin info corners
-    Move tags in pin info to bottom
-    tag search clear button
+    ~~Move tags in pin info to bottom~~
+    ~~tag search clear button~~
 -Pin UI: Tapping Picture expands
     Likes with icon and number
     Open Chat -> Live Chat (current users)

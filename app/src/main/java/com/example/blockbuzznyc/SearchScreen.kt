@@ -86,10 +86,24 @@ fun SearchScreen(onPinSelected: (MapPin) -> Unit) {
                         } else {
                             selectedTags - tag
                         }
-                        // Trigger the search with the newly selected tags
                         coroutineScope.launch {
                             performTagSearch(selectedTags) { results ->
                                 searchResults = results
+                            }
+                        }
+                    }
+                }
+                // Add a 'Clear Tags' button
+                item {
+                    TagButton("Clear Tags", false) {
+                        selectedTags = emptyList() // Clear the selected tags
+                        // Optionally trigger a search update or any other action needed when tags are cleared
+                        coroutineScope.launch {
+                            performTagSearch(selectedTags) { results ->
+                                searchResults = results
+                            }
+                            fetchRecentPins { results ->
+                                recentPins = results
                             }
                         }
                     }
@@ -262,7 +276,7 @@ fun PinItem(pin: MapPin, onClick: () -> Unit) {
                     modifier = Modifier.padding(top = 4.dp)
                 )
                 FlowRow(
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = 56.dp),
                     Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
 
