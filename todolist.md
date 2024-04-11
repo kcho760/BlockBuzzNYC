@@ -21,6 +21,7 @@ Features
         ~~delete pins (only for the user)~~
 
 Optimization and bug fixes:
+-check google login (broken again for some reason)
 -description enter function to give new line
 -better pin asset
 -alert messages for achievements

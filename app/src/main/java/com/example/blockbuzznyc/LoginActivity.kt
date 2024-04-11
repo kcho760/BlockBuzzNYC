@@ -69,7 +69,12 @@ fun LoginScreen(
 
         val googleSignInClient = GoogleSignIn.getClient(context, gso)
         val signInIntent = googleSignInClient.signInIntent
-        googleSignInLauncher.launch(signInIntent)
+        try {
+            googleSignInLauncher.launch(signInIntent)
+        } catch (e: Exception) {
+            Log.d("SignUp", "Failed to launch sign-in Intent: ${e.message}")
+            onLoginFailed("Failed to initiate sign-in: ${e.localizedMessage}")
+        }
     }
 
     Box(
