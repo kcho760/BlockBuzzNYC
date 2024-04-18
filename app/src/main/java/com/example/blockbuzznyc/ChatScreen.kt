@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -114,10 +117,25 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = pinTitle) },
+                modifier = Modifier
+                    .height(90.dp) // or your desired height
+                    .padding(bottom = 16.dp)
+                    .offset(y = (-40).dp)
+                ,
+                title = {
+                    Text(
+                        text = pinTitle,
+                        modifier = Modifier
+                            .fillMaxHeight()
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            modifier = Modifier.fillMaxHeight()
+                        )
                     }
                 },
                 colors = topAppBarColors(
