@@ -183,10 +183,7 @@ fun PinInfoDialog(
                             }
 
                         }
-                        Text(
-                            text = "Likes: $likesCount",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
-                        )
+
                     }
                     if (mapPin.creatorUserId != currentUser) {
                         val icon = if (isLiked) {
@@ -209,7 +206,11 @@ fun PinInfoDialog(
                                 Icon(
                                     imageVector = icon,
                                     contentDescription = "Like",
-                                    modifier = Modifier.size(24.dp),
+                                    modifier = Modifier.size(12.dp),
+                                )
+                                Text(
+                                        text = "$likesCount",
+                                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
                                 )
                             }
                         }
