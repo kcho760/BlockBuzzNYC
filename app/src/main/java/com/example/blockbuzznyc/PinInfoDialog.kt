@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
@@ -161,60 +162,63 @@ fun PinInfoDialog(
                         Row {
                             mapPin.tags.forEach { tag ->
                                 Surface(
-                                    shape = RoundedCornerShape(50), // Keeps the rounded shape
-                                    color = MaterialTheme.colorScheme.secondary, // Translucent background color
-                                    modifier = Modifier
-                                        .padding(2.dp) // Outer padding for the Surface, adding space between the tags
+                                        shape = RoundedCornerShape(50), // Keeps the rounded shape
+                                        color = MaterialTheme.colorScheme.secondary, // Translucent background color
+                                        modifier = Modifier
+                                                .padding(2.dp) // Outer padding for the Surface, adding space between the tags
                                 ) {
                                     Text(
-                                        text = tag,
-                                        modifier = Modifier
-                                            .border(
-                                                0.5.dp,
-                                                MaterialTheme.colorScheme.onSecondary,
-                                                RoundedCornerShape(50)
-                                            )
-                                            .padding(4.dp), // Additional padding inside the border
-                                        textAlign = TextAlign.Center,
-                                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Black)
+                                            text = tag,
+                                            modifier = Modifier
+                                                    .border(
+                                                            0.5.dp,
+                                                            MaterialTheme.colorScheme.onSecondary,
+                                                            RoundedCornerShape(50)
+                                                    )
+                                                    .padding(horizontal = 8.dp, vertical = 4.dp), // Additional padding inside the border
+                                            textAlign = TextAlign.Center,
+                                            style = MaterialTheme.typography.bodySmall.copy(color = Color.Black),
+                                            maxLines = Int.MAX_VALUE, // Allows unlimited lines
+                                            overflow = TextOverflow.Visible // Ensures text wraps instead of hiding
                                     )
                                 }
-                                Spacer(modifier = Modifier.size(8.dp)) // Space between tags, adjust as necessary
+//                                Spacer(modifier = Modifier.size(8.dp)) // Space between tags, adjust as necessary
                             }
 
+                            if (mapPin.creatorUserId != currentUser) {
+                                val icon = if (isLiked) {
+                                    Icons.Filled.ThumbUp // Filled icon when liked
+                                } else {
+                                    Icons.Outlined.ThumbUp // Outlined icon when not liked
+                                }
+
+                                Surface(
+                                        shape = RoundedCornerShape(50),
+                                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.onSecondary),
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.padding(4.dp)
+                                ) {
+                                    Button(
+                                            onClick = { onLikeToggle(mapPin) },
+                                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary),
+                                            modifier = Modifier.clip(CircleShape)
+                                    ) {
+                                        Icon(
+                                                imageVector = icon,
+                                                contentDescription = "Like",
+                                                modifier = Modifier.size(12.dp),
+                                        )
+                                        Text(
+                                                text = "$likesCount",
+                                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                     }
-                    if (mapPin.creatorUserId != currentUser) {
-                        val icon = if (isLiked) {
-                            Icons.Filled.ThumbUp // Filled icon when liked
-                        } else {
-                            Icons.Outlined.ThumbUp // Outlined icon when not liked
-                        }
 
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.onSecondary),
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.padding(4.dp)
-                        ) {
-                            Button(
-                                onClick = { onLikeToggle(mapPin) },
-                                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary),
-                                modifier = Modifier.clip(CircleShape)
-                            ) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = "Like",
-                                    modifier = Modifier.size(12.dp),
-                                )
-                                Text(
-                                        text = "$likesCount",
-                                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Black)
-                                )
-                            }
-                        }
-                    }
                     if (mapPin.creatorUserId == currentUser) {
                             IconButton(
                                 onClick = { showMenu = !showMenu }
