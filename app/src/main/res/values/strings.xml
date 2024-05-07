@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">BlockBuzzNYC</string>
-    <string name="google_maps_key" translatable="false">AIzaSyBZwIA1Yi66ViEfB5R6jq4GYgXEn-OF4LU</string>
+    <string name="google_maps_key" translatable="false">AIzaSyBLVb6jE_mMg21REiBQ4iuO3qg3Ygm25xE</string>
     <string name="default_web_client_id" translatable="false">15720236856-0q14kp2dv3hpvt6go2o831sobep98b08.apps.googleusercontent.com</string>
 </resources>
