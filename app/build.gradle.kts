@@ -18,7 +18,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
 
-        resValue("string", "google_maps_key", project.findProperty("MyGoogleMapsApiKey") as String? ?: "")
     }
 
     signingConfigs {
