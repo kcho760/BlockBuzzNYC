@@ -35,7 +35,7 @@ Optimization and bug fixes:
     ~~Move tags in pin info to bottom~~
     ~~tag search clear button~~
 -Pin UI: Tapping Picture expands
-    Likes with icon and number
+    ~~Likes with icon and number~~
     Open Chat -> Live Chat (current users)
     ~~Close button -> X~~
     ~~Delete and Edit into Gear box menu~~

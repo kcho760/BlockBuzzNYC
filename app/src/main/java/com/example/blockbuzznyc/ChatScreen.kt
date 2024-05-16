@@ -34,6 +34,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,224 +66,153 @@ import kotlinx.coroutines.launch
 fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
     var messageText by remember { mutableStateOf("") }
     var messages by remember { mutableStateOf(listOf<ChatMessage>()) }
+    var activeUserCount by remember { mutableStateOf(0) }
     val listState = rememberLazyListState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    var hasUnseenMessages by remember { mutableStateOf(false) }
-    var lastMessageCountAtBottom by remember { mutableStateOf(0) }
-    var isInitialLoad by remember { mutableStateOf(true) }
 
     LaunchedEffect(pinId) {
         listenForMessages(pinId, context) { newMessages ->
-            val isAtBottom = listState.layoutInfo.visibleItemsInfo.any {
-                it.index == messages.size - 1
-            }
-
-            val hadMessages = messages.isNotEmpty()
-            val hasNewMessages = newMessages.size > messages.size
-
-            // Update the message list
             messages = newMessages
-
-            if (isAtBottom) {
-                // User is at the bottom, update the last message count
-                lastMessageCountAtBottom = messages.size
-                hasUnseenMessages = false
-
-                // If new messages have arrived, auto-scroll to the bottom
-                if (hasNewMessages && hadMessages) {
-                    coroutineScope.launch {
-                        listState.animateScrollToItem(newMessages.size - 1)
-                    }
-                }
-            } else {
-                // User is not at the bottom, check for unseen messages
-                if (newMessages.size > lastMessageCountAtBottom && !isInitialLoad) {
-                    hasUnseenMessages = true
-                }
-            }
-
-            // Handle initial load to scroll to the bottom
-            if (isInitialLoad && newMessages.isNotEmpty()) {
-                coroutineScope.launch {
-                    delay(100)
-                    listState.scrollToItem(index = newMessages.size - 1)
-                }
-                isInitialLoad = false
-            }
         }
     }
 
+    LaunchedEffect(pinId) {
+        trackUserPresence(pinId)
+    }
+
+    LaunchedEffect(pinId) {
+        listenForActiveUsers(pinId) { count ->
+            activeUserCount = count
+            Log.d("ChatScreen", "Active user count updated: $activeUserCount")
+        }
+    }
+
+    // Log whenever activeUserCount changes
+    LaunchedEffect(activeUserCount) {
+        Log.d("ChatScreen", "Active users text should be displayed with count: $activeUserCount")
+    }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                modifier = Modifier
-                    .height(90.dp) // or your desired height
-                    .padding(bottom = 16.dp)
-                    .offset(y = (-40).dp)
-                ,
-                title = {
-                    Text(
-                        text = pinTitle,
-                        modifier = Modifier
-                            .fillMaxHeight()
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            modifier = Modifier.fillMaxHeight()
+            topBar = {
+                TopAppBar(
+                        title = {
+                            Column(
+                                    modifier = Modifier.fillMaxHeight(),
+                                    verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(text = pinTitle, modifier = Modifier.fillMaxHeight())
+                                Text(
+                                        text = "Active users: $activeUserCount",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.navigateUp() }) {
+                                Icon(
+                                        imageVector = Icons.Filled.ArrowBack,
+                                        contentDescription = "Back"
+                                )
+                            }
+                        },
+                        colors = topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.tertiary
                         )
-                    }
-                },
-                colors = topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.tertiary
-                ),
-            )
-        }
+                )
+            }
     ) { innerPadding ->
         Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)) {
+                .fillMaxSize()
+                .padding(innerPadding)) {
 
             Column(modifier = Modifier.fillMaxSize()) {
                 LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .imePadding(), // This accounts for the IME
-                    state = listState,
+                        modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .imePadding(),
+                        state = listState,
                 ) {
                     items(messages) { message ->
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(4.dp),
-                            horizontalArrangement = if (message.senderId == FirebaseAuth.getInstance().currentUser?.uid) {
-                                Arrangement.End
-                            } else {
-                                Arrangement.Start
-                            }
+                                modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(4.dp),
+                                horizontalArrangement = if (message.senderId == FirebaseAuth.getInstance().currentUser?.uid) {
+                                    Arrangement.End
+                                } else {
+                                    Arrangement.Start
+                                }
                         ) {
                             Text(
-                                text = "${message.username}: ${message.message}",
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier
-                                    .background(
-                                        color = if (message.senderId == FirebaseAuth.getInstance().currentUser?.uid) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.secondary
-                                        },
-                                        shape = MaterialTheme.shapes.medium
-                                    )
-                                    .padding(8.dp)
+                                    text = "${message.username}: ${message.message}",
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier
+                                            .background(
+                                                    color = if (message.senderId == FirebaseAuth.getInstance().currentUser?.uid) {
+                                                        MaterialTheme.colorScheme.primary
+                                                    } else {
+                                                        MaterialTheme.colorScheme.secondary
+                                                    },
+                                                    shape = MaterialTheme.shapes.medium
+                                            )
+                                            .padding(8.dp)
                             )
                         }
                     }
                 }
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-//                    verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
                 ) {
                     OutlinedTextField(
-                        value = messageText,
-                        onValueChange = { messageText = it },
-                        modifier = Modifier.weight(1f),
-                        label = { Text("Type a message") },
-                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSecondary),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            cursorColor = MaterialTheme.colorScheme.tertiary,
-                            focusedBorderColor = MaterialTheme.colorScheme.tertiary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.tertiary,
-                            focusedLabelColor = MaterialTheme.colorScheme.onSecondary,
-                        )
+                            value = messageText,
+                            onValueChange = { messageText = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Type a message") },
+                            textStyle = TextStyle(color = MaterialTheme.colorScheme.onSecondary),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                    cursorColor = MaterialTheme.colorScheme.tertiary,
+                                    focusedBorderColor = MaterialTheme.colorScheme.tertiary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.tertiary,
+                                    focusedLabelColor = MaterialTheme.colorScheme.onSecondary,
+                            )
                     )
                     if (listState.firstVisibleItemIndex < messages.size - 1) {
                         IconButton(
-                            onClick = {
-                                coroutineScope.launch {
-                                    listState.animateScrollToItem(messages.size - 1)
-                                }
-                            },
+                                onClick = {
+                                    coroutineScope.launch {
+                                        listState.animateScrollToItem(messages.size - 1)
+                                    }
+                                },
                         ) {
                             Icon(
-                                imageVector = Icons.Default.ArrowDownward,
-                                contentDescription = "Scroll to bottom",
-                                modifier = Modifier.size(50.dp),
-                                tint = MaterialTheme.colorScheme.onPrimary // Color of the Icon
+                                    imageVector = Icons.Default.ArrowDownward,
+                                    contentDescription = "Scroll to bottom",
+                                    modifier = Modifier.size(50.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
                     Button(
-                        onClick = {
-                            // sendMessage logic here
-                            sendMessage(pinId, messageText, context)
-                            messageText = ""
-                        },
-                        colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                            onClick = {
+                                sendMessage(pinId, messageText, context)
+                                messageText = ""
+                            },
+                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
                     ) {
                         Text("Send")
                     }
                 }
             }
-
-            if (hasUnseenMessages && !isInitialLoad) {
-                FloatingActionButton(
-                    onClick = {
-                        // Scroll to bottom logic here
-                        coroutineScope.launch {
-                            listState.animateScrollToItem(messages.size - 1)
-                            hasUnseenMessages = false
-                        }
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 70.dp),
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onSecondary
-                ) {
-                    Text("New Messages")
-                }
-            }
         }
     }
 }
-
-
-fun listenForMessages(pinId: String, context: Context, onMessageReceived: (List<ChatMessage>) -> Unit) {
-    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-    var lastReceivedMessage: ChatMessage? = null
-    val ref = Firebase.database.reference.child("chats/$pinId")
-
-    val messageListener = object : ValueEventListener {
-        override fun onDataChange(dataSnapshot: DataSnapshot) {
-            val newMessages = dataSnapshot.children.mapNotNull { it.getValue(ChatMessage::class.java) }
-
-            val latestMessage = newMessages.lastOrNull()
-            if (latestMessage != null && latestMessage.senderId != currentUserId && latestMessage != lastReceivedMessage) {
-                SoundPlayer.playReceiveMessageSound(context)
-                lastReceivedMessage = latestMessage
-            }
-
-            onMessageReceived(newMessages)
-        }
-
-        override fun onCancelled(databaseError: DatabaseError) {
-            Log.w("ChatScreen", "loadMessages:onCancelled", databaseError.toException())
-        }
-    }
-
-    ref.addValueEventListener(messageListener)
-}
-
 
 fun sendMessage(pinId: String, messageText: String, context: Context) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -306,4 +236,41 @@ fun sendMessage(pinId: String, messageText: String, context: Context) {
     }.addOnFailureListener {
         Log.e("ChatScreen", "Failed to fetch username", it)
     }
+}
+fun listenForMessages(pinId: String, context: Context, onMessageReceived: (List<ChatMessage>) -> Unit) {
+    val ref = Firebase.database.reference.child("chats/$pinId")
+    val messageListener = object : ValueEventListener {
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            val newMessages = dataSnapshot.children.mapNotNull { it.getValue(ChatMessage::class.java) }
+            onMessageReceived(newMessages)
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+            Log.w("ChatScreen", "loadMessages:onCancelled", databaseError.toException())
+        }
+    }
+    ref.addValueEventListener(messageListener)
+}
+
+fun trackUserPresence(pinId: String) {
+    val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+    val ref = Firebase.database.reference.child("chats/$pinId/activeUsers/${currentUser.uid}")
+    ref.onDisconnect().removeValue()
+    ref.setValue(true)
+    Log.d("ChatScreen", "User ${currentUser.uid} is now active in chat $pinId")
+}
+
+fun listenForActiveUsers(pinId: String, onActiveUsersChanged: (Int) -> Unit) {
+    val ref = Firebase.database.reference.child("chats/$pinId/activeUsers")
+    ref.addValueEventListener(object : ValueEventListener {
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            val activeUsers = dataSnapshot.childrenCount.toInt()
+            onActiveUsersChanged(activeUsers)
+            Log.d("ChatScreen", "Active users in chat $pinId: $activeUsers")
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+            Log.w("ChatScreen", "listenForActiveUsers:onCancelled", databaseError.toException())
+        }
+    })
 }
