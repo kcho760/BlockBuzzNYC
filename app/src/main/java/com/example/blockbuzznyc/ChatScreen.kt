@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -61,7 +63,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
     var messageText by remember { mutableStateOf("") }
@@ -95,38 +96,46 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
 
     Scaffold(
             topBar = {
-                TopAppBar(
-                        title = {
-                            Column(
-                                    modifier = Modifier.fillMaxHeight(),
-                                    verticalArrangement = Arrangement.Center
-                            ) {
-                                Text(text = pinTitle, modifier = Modifier.fillMaxHeight())
-                                Text(
-                                        text = "Active users: $activeUserCount",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        modifier = Modifier.padding(top = 4.dp)
-                                )
-                            }
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = { navController.navigateUp() }) {
-                                Icon(
-                                        imageVector = Icons.Filled.ArrowBack,
-                                        contentDescription = "Back"
-                                )
-                            }
-                        },
-                        colors = topAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.tertiary
-                        )
-                )
+                Box(
+                        modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp) // Adjust the height as needed
+                                .background(MaterialTheme.colorScheme.tertiary)
+                ) {
+                    Row(
+                            modifier = Modifier
+                                    .fillMaxHeight()
+                                    .padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        IconButton(onClick = { navController.navigateUp() }) {
+                            Icon(
+                                    imageVector = Icons.Filled.ArrowBack,
+                                    contentDescription = "Back"
+                            )
+                        }
+                        Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(text = pinTitle)
+                            Text(
+                                    text = "Active users: $activeUserCount",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(48.dp)) // Placeholder to balance the back icon
+                    }
+                }
             }
     ) { innerPadding ->
-        Box(modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)) {
-
+        Box(
+                modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+        ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 LazyColumn(
                         modifier = Modifier
