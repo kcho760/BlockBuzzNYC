@@ -41,10 +41,10 @@ Optimization and bug fixes:
     ~~Delete and Edit into Gear box menu~~
     ~~Edit Pin UI~~
 -Live Chat:
-    Fix TopBar
+    ~~Fix TopBar~~
     Send button -> Icon
     Fix bottom margin
-    Current Active viewers in chat in top bar
+    ~~Current Active viewers in chat in top bar~~
 -Map Pin icon -> Custom
 ~~-Sign up form and log in text color~~
 

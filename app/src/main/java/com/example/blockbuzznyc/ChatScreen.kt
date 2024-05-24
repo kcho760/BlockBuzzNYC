@@ -63,6 +63,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
     var messageText by remember { mutableStateOf("") }
@@ -96,39 +97,32 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
 
     Scaffold(
             topBar = {
-                Box(
-                        modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp) // Adjust the height as needed
-                                .background(MaterialTheme.colorScheme.tertiary)
-                ) {
-                    Row(
-                            modifier = Modifier
-                                    .fillMaxHeight()
-                                    .padding(horizontal = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        IconButton(onClick = { navController.navigateUp() }) {
-                            Icon(
-                                    imageVector = Icons.Filled.ArrowBack,
-                                    contentDescription = "Back"
-                            )
-                        }
-                        Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(text = pinTitle)
-                            Text(
-                                    text = "Active users: $activeUserCount",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(48.dp)) // Placeholder to balance the back icon
-                    }
-                }
+                TopAppBar(
+                        title = {
+                            Column(
+                                    modifier = Modifier.fillMaxHeight(),
+                                    verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(text = pinTitle)
+                                Text(
+                                        text = "Active users: $activeUserCount",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { navController.navigateUp() }) {
+                                Icon(
+                                        imageVector = Icons.Filled.ArrowBack,
+                                        contentDescription = "Back"
+                                )
+                            }
+                        },
+                        colors = topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.tertiary
+                        )
+                )
             }
     ) { innerPadding ->
         Box(
@@ -168,7 +162,7 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
                                                     },
                                                     shape = MaterialTheme.shapes.medium
                                             )
-                                            .padding(8.dp)
+                                            .padding(10.dp)
                             )
                         }
                     }
@@ -222,6 +216,7 @@ fun ChatScreen(navController: NavController, pinId: String, pinTitle: String) {
         }
     }
 }
+
 
 fun sendMessage(pinId: String, messageText: String, context: Context) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
