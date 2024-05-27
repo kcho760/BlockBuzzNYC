@@ -22,6 +22,7 @@ Features
 
 Optimization and bug fixes:
 ~~-check google login (broken again for some reason)~~
+-Fix scaling on smaller phones in profile page
 -description enter function to give new line
 -better pin asset
 -alert messages for achievements
