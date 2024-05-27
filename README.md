@@ -1,3 +1,6 @@
+[Emulator Site](https://appetize.io/app/fabmjpjt7ndnscmhpfcttah4ou?device=pixel7&osVersion=13.0&deviceLocation=40.7128%2C-74.0060)
+
+
 # BlockBuzzNYC
 <img src="assets/BlockBuzzNYC.png" width="200" alt="Logo">
 <p>
