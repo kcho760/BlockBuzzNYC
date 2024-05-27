@@ -36,7 +36,7 @@ Optimization and bug fixes:
     ~~tag search clear button~~
 -Pin UI: Tapping Picture expands
     ~~Likes with icon and number~~
-    Open Chat -> Live Chat (current users)
+    ~~Open Chat -> Live Chat (current users)~~
     ~~Close button -> X~~
     ~~Delete and Edit into Gear box menu~~
     ~~Edit Pin UI~~
