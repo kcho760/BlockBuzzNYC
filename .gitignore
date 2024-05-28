@@ -15,6 +15,6 @@
 local.properties
 gradle.properties
 app/google-services.json
-app/build/blockbuzznyc.keystore
+app/my-release-key.keystore
 app/src/main/res/values/strings.xml
 ```

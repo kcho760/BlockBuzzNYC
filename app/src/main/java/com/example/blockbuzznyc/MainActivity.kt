@@ -87,18 +87,14 @@ class MainActivity : ComponentActivity() {
                 val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
                 try {
                     val account = task.getResult(ApiException::class.java)
-                    // Add a log here to confirm a successful account retrieval
                     Log.d("SignUp", "Google Sign-In account retrieved: ${account.email}")
                     firebaseAuthWithGoogle(account.idToken, navController)
                 } catch (e: ApiException) {
-                    // Log detailed information about the ApiException
                     Log.d("SignUp", "Google Sign-In failed with code: ${e.statusCode} and message: ${e.localizedMessage}")
                 }
             } else {
-                // Log additional information when the result is not OK
                 Log.d("SignUp", "Sign-In result not OK with resultCode: ${result.resultCode}")
                 if (result.data != null) {
-                    // Attempt to parse the Google Sign-In error if possible
                     val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
                     task.exception?.let {
                         if (it is ApiException) {
@@ -108,6 +104,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
 
 
         setContent {

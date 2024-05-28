@@ -55,17 +55,15 @@ fun LoginScreen(
     }
 
     fun googleSignIn(
-        context: Context,
-        onLoginSuccessful: () -> Unit,
-        onLoginFailed: (String) -> Unit,
-        googleSignInLauncher: ActivityResultLauncher<Intent>
+            context: Context,
+            onLoginSuccessful: () -> Unit,
+            onLoginFailed: (String) -> Unit,
+            googleSignInLauncher: ActivityResultLauncher<Intent>
     ) {
-
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("15720236856-0q14kp2dv3hpvt6go2o831sobep98b08.apps.googleusercontent.com")
-            .requestEmail()
-            .build()
-
+                .requestIdToken("15720236856-cgkg47sis7b2g6k6a24umdgruku256le.apps.googleusercontent.com")
+                .requestEmail()
+                .build()
 
         val googleSignInClient = GoogleSignIn.getClient(context, gso)
         val signInIntent = googleSignInClient.signInIntent

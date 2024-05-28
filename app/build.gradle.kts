@@ -38,6 +38,10 @@ android {
                 "proguard-rules.pro"
             )
         }
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
+            // Other debug build configurations
+        }
     }
 
 
