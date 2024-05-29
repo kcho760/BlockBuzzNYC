@@ -26,7 +26,7 @@ class ImageHandler(private val context: Context, private val activityResultCalle
     fun takePicture(onImageCaptured: (Uri?) -> Unit) {
         this.onImageCaptured = onImageCaptured
         imageUri = createImageFileUri()  // Call to create a new image file
-        takePictureLauncher.launch(imageUri)
+        takePictureLauncher.launch(imageUri!!)
     }
 
     private fun createImageFileUri(): Uri {
