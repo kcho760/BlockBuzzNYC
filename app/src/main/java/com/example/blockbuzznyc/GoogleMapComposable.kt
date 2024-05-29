@@ -171,19 +171,18 @@ fun GoogleMapComposable(
 
     fun setupGoogleMap(googleMap: GoogleMap) {
         googleMap.setOnMarkerClickListener { marker ->
-
             val pinInfo = marker.tag as? PinInfo
             pinInfo?.let { it ->
                 selectedMapPin.value = MapPin(
-                    title = marker.title ?: "",
-                    description = it.description,
-                    creatorUsername = it.creatorUsername,
-                    creatorUserId = it.creatorUserId,
-                    latitude = marker.position.latitude,
-                    longitude = marker.position.longitude,
-                    photoUrl = it.photoUrl,
-                    id = it.id,
-                    tags = it.tags
+                        title = marker.title ?: "",
+                        description = it.description,
+                        creatorUsername = it.creatorUsername,
+                        creatorUserId = it.creatorUserId,
+                        latitude = marker.position.latitude,
+                        longitude = marker.position.longitude,
+                        photoUrl = it.photoUrl,
+                        id = it.id,
+                        tags = it.tags
                 )
                 selectedMapPin.value?.id?.let { mapPinId ->
                     fetchUpdatedMapPin(mapPinId) { updatedMapPin ->
@@ -196,7 +195,10 @@ fun GoogleMapComposable(
             }
             true
         }
+
+        isMapReady = true // Ensure this is set here
     }
+
 
     fun recenterMap(googleMap: GoogleMap, currentLatLngInstance: LatLng) {
         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLngInstance, 17f))

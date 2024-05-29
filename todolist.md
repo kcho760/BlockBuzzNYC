@@ -21,13 +21,13 @@ Features
         ~~delete pins (only for the user)~~
 
 Optimization and bug fixes:
+-google sign in extremely broken. Potentially depreciated?
 ~~-check google login (broken again for some reason)~~
 -Fix scaling on smaller phones in profile page
 -description enter function to give new line
 -better pin asset
 -alert messages for achievements
--check on delay between pin creation and pin showing up on map (fixed?)
--unable to switch google profiles
+~~-check on delay between pin creation and pin showing up on map (fixed?)~~
 -TopBar: remove BlockBuzzNYC, replace with tag search (need to reload map per tag clicked)
 -Profile Page: Gear icon for settings (change name, delete account)
     -Achievements: Make Clickable to see date recieved and description.
