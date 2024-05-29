@@ -57,6 +57,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.blockbuzznyc.model.MapPin
 import com.example.blockbuzznyc.ui.theme.BlockBuzzNYCTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
@@ -105,8 +106,6 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-
-
         setContent {
             navController = rememberNavController()
             val isLoggedIn = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
@@ -116,18 +115,20 @@ class MainActivity : ComponentActivity() {
         }
     }
     private fun firebaseAuthWithGoogle(idToken: String?, navController: NavController) {
+        if (idToken == null) {
+            Log.d("SignUp", "Google ID token is null")
+            return
+        }
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         FirebaseAuth.getInstance().signInWithCredential(credential)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    isLoggedIn.value = true
-                    navController.navigate("main") {
-                        popUpTo("login") { inclusive = true }
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Log.d("SignUp", "Google Sign-In with Firebase successful")
+                        navController.navigate("mainScreen") // Or any action to be performed after successful login
+                    } else {
+                        Log.d("SignUp", "Google Sign-In with Firebase failed: ${task.exception}")
                     }
-                } else {
-                    Log.w("SignUp", "signInWithCredential:failure", task.exception)
                 }
-            }
     }
 }
 
