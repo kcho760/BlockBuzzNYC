@@ -85,22 +85,22 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
 
     //pick image from gallery for profile pic
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+            contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             uploadProfilePicture(
-                userId = userId,
-                imageUri = it,
-                context = context, // Pass the context here
-                onSuccess = { imageUrl ->
-                    profilePictureUrl = imageUrl
-                    updateUserProfilePicture(userId, imageUrl) {
-                        refreshToggle = !refreshToggle
+                    userId = userId,
+                    imageUri = it,
+                    context = context, // Pass the context here
+                    onSuccess = { imageUrl ->
+                        profilePictureUrl = imageUrl
+                        updateUserProfilePicture(userId, imageUrl) {
+                            refreshToggle = !refreshToggle
+                        }
+                    },
+                    onFailure = {
+                        Log.d("ProfileScreen", "Failed to upload profile picture")
                     }
-                },
-                onFailure = {
-                    Log.d("ProfileScreen", "Failed to upload profile picture")
-                }
             )
         }
     }
@@ -123,150 +123,149 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
     val user by userFlow.collectAsState(initial = User())
 
     Surface(modifier = Modifier
-        .background(MaterialTheme.colorScheme.background)
-        .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .fillMaxSize()
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(4.dp)
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(4.dp)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
             // Username
             Text(
-                text = user.username,
-                color = MaterialTheme.colorScheme.tertiary, // This sets the text color to your primary color
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = MaterialTheme.typography.titleLarge.fontSize * 1.25f,
-                )
+                    text = user.username,
+                    color = MaterialTheme.colorScheme.tertiary, // This sets the text color to your primary color
+                    style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = MaterialTheme.typography.titleLarge.fontSize * 1.25f,
+                    )
             )
-
 
 //            Spacer(modifier = Modifier.height(16.dp))
 
             // Profile Picture Row
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .padding(8.dp)
-                    .offset(x = (25).dp) // Adjust the position as needed
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                            .padding(8.dp)
+                            .offset(x = (25).dp) // Adjust the position as needed
             ) {
                 // Profile Picture Box, which is clickable to pick an image from the gallery
                 Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(150.dp)
-                        .clip(CircleShape)
-                        .border(2.dp, Color.Black, CircleShape)
-                        .clickable { imagePickerLauncher.launch("image/*") } // This will launch the image picker
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                                .size(150.dp)
+                                .clip(CircleShape)
+                                .border(2.dp, Color.Black, CircleShape)
+                                .clickable { imagePickerLauncher.launch("image/*") } // This will launch the image picker
                 ) {
                     profilePictureUrl?.let { imageUrl ->
                         AsyncImage(
-                            model = imageUrl,
-                            contentDescription = "Profile Picture",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.matchParentSize()
+                                model = imageUrl,
+                                contentDescription = "Profile Picture",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.matchParentSize()
                         )
                     } ?: run {
                         Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Default Profile Picture",
-                            modifier = Modifier.matchParentSize()
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Default Profile Picture",
+                                modifier = Modifier.matchParentSize()
                         )
                     }
                 }
                 // Camera Icon Button
                 IconButton(
-                    onClick = {
-                        imageHandler.takePicture { uri ->
-                            uri?.let {
-                                uploadImageToFirebaseStorage(userId, it) { imageUrl ->
-                                    updateUserProfilePicture(userId, imageUrl) {
-                                        refreshToggle = !refreshToggle
+                        onClick = {
+                            imageHandler.takePicture { uri ->
+                                uri?.let {
+                                    uploadImageToFirebaseStorage(userId, it) { imageUrl ->
+                                        updateUserProfilePicture(userId, imageUrl) {
+                                            refreshToggle = !refreshToggle
+                                        }
                                     }
                                 }
                             }
-                        }
-                    },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .offset(x = (-30).dp, y = 50.dp) // Adjust the position as needed
-                        .zIndex(1f) // Make sure the icon is above the profile picture
-                        .clip(CircleShape)
-                        .border(2.dp, Color.Black, CircleShape)
-                        .background(MaterialTheme.colorScheme.tertiary, CircleShape)
+                        },
+                        modifier = Modifier
+                                .size(48.dp)
+                                .offset(x = (-30).dp, y = 50.dp) // Adjust the position as needed
+                                .zIndex(1f) // Make sure the icon is above the profile picture
+                                .clip(CircleShape)
+                                .border(2.dp, Color.Black, CircleShape)
+                                .background(MaterialTheme.colorScheme.tertiary, CircleShape)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = "Upload Profile Picture",
-                        modifier = Modifier.size(12.dp)
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Upload Profile Picture",
+                            modifier = Modifier.size(12.dp)
                     )
                 }
             }
 
             //section for counts
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(70.dp)
-                    .padding(2.dp)
-                    .border(1.dp, Color.Black, RoundedCornerShape(41.dp))
-                    .background(MaterialTheme.colorScheme.tertiary, CircleShape)
+                    modifier = Modifier
+                            .fillMaxWidth()
+                            .height(70.dp)
+                            .padding(2.dp)
+                            .border(1.dp, Color.Black, RoundedCornerShape(41.dp))
+                            .background(MaterialTheme.colorScheme.tertiary, CircleShape)
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                        modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     // Display the actual Pins count
                     CountSection(count = user.numberOfPins, label = "Created Pins")
 
                     // Display the actual Likes count
                     CountSection(
-                        count = user.totalLikes,
-                        label = "Likes"
+                            count = user.totalLikes,
+                            label = "Likes"
                     )
                 }
             }
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .clip(RoundedCornerShape(20.dp)) // Apply rounded corners to the outer box
-                    .border(1.dp, Color.Black, RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.background),
+                    modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f) // Use weight to make it occupy proportional space
+                            .clip(RoundedCornerShape(20.dp)) // Apply rounded corners to the outer box
+                            .border(1.dp, Color.Black, RoundedCornerShape(20.dp))
+                            .background(MaterialTheme.colorScheme.background),
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
+                        modifier = Modifier
+                                .fillMaxWidth()
                 ) {
                     // Title Box for "Pins" text
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth() // Make the title box stretch to the sides of the outer box
-                            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)) // Rounded corners for the title box
-                            .background(MaterialTheme.colorScheme.tertiary) // Background color for the title box
-                            .padding(8.dp) // Padding inside the title box
+                            modifier = Modifier
+                                    .fillMaxWidth() // Make the title box stretch to the sides of the outer box
+                                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)) // Rounded corners for the title box
+                                    .background(MaterialTheme.colorScheme.tertiary) // Background color for the title box
+                                    .padding(8.dp) // Padding inside the title box
                     ) {
                         Text(
-                            text = "Your Pins",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onTertiary,
-                            modifier = Modifier
-                                .padding(vertical = 8.dp) // Vertical padding for the text
-                                .fillMaxWidth() // Ensure the Text fills the width
-                                .wrapContentWidth(Alignment.CenterHorizontally) // Center the text horizontally within the Text composable
+                                text = "Your Pins",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onTertiary,
+                                modifier = Modifier
+                                        .padding(vertical = 8.dp) // Vertical padding for the text
+                                        .fillMaxWidth() // Ensure the Text fills the width
+                                        .wrapContentWidth(Alignment.CenterHorizontally) // Center the text horizontally within the Text composable
                         )
                     }
 
                     // Pins content
                     LazyRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp), // Padding for the LazyRow content
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp), // Padding for the LazyRow content
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(pins) { pin ->
                             PinCard(pin = pin, onPinSelected = {
@@ -279,37 +278,37 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
             }
 
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp)) // Apply rounded corners to the outer box
-                    .height(200.dp)
-                    .border(1.dp, Color.Black, RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.background),
+                    modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f) // Use weight to make it occupy proportional space
+                            .clip(RoundedCornerShape(20.dp)) // Apply rounded corners to the outer box
+                            .border(1.dp, Color.Black, RoundedCornerShape(20.dp))
+                            .background(MaterialTheme.colorScheme.background),
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier
+                                .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // The Box for the "Achievements" Text with matching rounded corners on the top
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth() // Fill the width of the parent Column
-                            .background(MaterialTheme.colorScheme.tertiary) // Background color of the Box
-                            .padding(8.dp) // Padding inside the Box around the text
-                            .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)), // Apply clip after background to ensure corners are rounded
-                        contentAlignment = Alignment.Center // Center the Text inside the Box
+                            modifier = Modifier
+                                    .fillMaxWidth() // Fill the width of the parent Column
+                                    .background(MaterialTheme.colorScheme.tertiary) // Background color of the Box
+                                    .padding(8.dp) // Padding inside the Box around the text
+                                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)), // Apply clip after background to ensure corners are rounded
+                            contentAlignment = Alignment.Center // Center the Text inside the Box
                     ) {
                         Text(
-                            text = "Achievements",
-                            style = MaterialTheme.typography.titleMedium, // Apply a medium title style
-                            color = MaterialTheme.colorScheme.onTertiary, // Text color for better contrast
-                            modifier = Modifier.padding(8.dp) // Padding for the Text inside the Box
+                                text = "Achievements",
+                                style = MaterialTheme.typography.titleMedium, // Apply a medium title style
+                                color = MaterialTheme.colorScheme.onTertiary, // Text color for better contrast
+                                modifier = Modifier.padding(8.dp) // Padding for the Text inside the Box
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp)) // Space between title and items
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(user.achievements.filter { it.earned }) { achievement ->
                             AchievementItem(achievement)
@@ -320,7 +319,6 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
         }
     }
 }
-
 
 fun uploadImageToFirebaseStorage(userId: String, imageUri: Uri, onComplete: (String) -> Unit) {
     val storageRef = Firebase.storage.reference.child("profile_pictures/$userId.jpg")
@@ -401,45 +399,43 @@ fun CountSection(count: Int, label: String) {
 
 
 @Composable
-fun AchievementItem(achievement: Achievement) {
+fun AchievementItem(achievement: Achievement, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier
-            .padding(vertical = 4.dp) // Padding for each item
-            .border(1.dp, Color.Black, RoundedCornerShape(8.dp)) // Border for each item
-            .size(width = 150.dp, height = 110.dp)
-            .background(MaterialTheme.colorScheme.background), // Define the size of the card
-        shape = RoundedCornerShape(8.dp), // Rounded corners for the card
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.secondary), // Background color for the card
-        content = {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize() // Fill the entire Card with the Column
-                    .padding(8.dp), // Padding inside the Column
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.trophy_icon),
-                    contentDescription = "Achievement",
-                    modifier = Modifier
-                        .size(45.dp)
-                        .align(Alignment.CenterHorizontally),
-                    tint = Color.Unspecified // This will keep the original drawable colors
-                )
-                Spacer(modifier = Modifier.height(4.dp)) // Space between icon and text
-                Text(
-                    text = achievement.name,
-                    style = MaterialTheme.typography.bodyMedium, // Use bodySmall or any other available style
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-                Spacer(modifier = Modifier.height(4.dp)) // Space between icon and text
-                Text(
-                    text = achievement.description,
-                    style = MaterialTheme.typography.bodySmall, // Use bodySmall or any other available style
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            }
-        },
+            modifier = modifier
+                    .padding(vertical = 4.dp, horizontal = 8.dp) // Padding for each item
+                    .border(1.dp, Color.Black, RoundedCornerShape(8.dp)) // Border for each item
+                    .background(MaterialTheme.colorScheme.background), // Background color
+            shape = RoundedCornerShape(8.dp), // Rounded corners for the card
+            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.secondary), // Background color for the card
+            content = {
+                Column(
+                        modifier = Modifier
+                                .fillMaxSize() // Fill the entire Card with the Column
+                                .padding(8.dp), // Padding inside the Column
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                            painter = painterResource(id = R.drawable.trophy_icon),
+                            contentDescription = "Achievement",
+                            modifier = Modifier
+                                    .size(30.dp)
+                                    .align(Alignment.CenterHorizontally),
+                            tint = Color.Unspecified // This will keep the original drawable colors
+                    )
+                    Spacer(modifier = Modifier.height(4.dp)) // Space between icon and text
+                    Text(
+                            text = achievement.name,
+                            style = MaterialTheme.typography.bodyMedium, // Use bodySmall or any other available style
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp)) // Space between icon and text
+                    Text(
+                            text = achievement.description,
+                            style = MaterialTheme.typography.bodySmall, // Use bodySmall or any other available style
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+            },
     )
 }
-
