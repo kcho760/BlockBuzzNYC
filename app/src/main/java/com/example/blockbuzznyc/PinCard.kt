@@ -24,39 +24,40 @@ import com.google.android.gms.maps.model.LatLng
 @Composable
 fun PinCard(pin: MapPin, onPinSelected: (LatLng) -> Unit) {
     Card(
-        shape = RoundedCornerShape(8.dp),
-        modifier = Modifier
-            .padding(8.dp)
-            .border(.5.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(8.dp))
-            .height(200.dp) // Fixed height for the card
-            .width(150.dp) // Fixed width for the card
-            .clickable {
-                onPinSelected(
-                    LatLng(
-                        pin.latitude,
-                        pin.longitude
-                    )
-                )},
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary)
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                    .padding(8.dp)
+                    .border(.5.dp, MaterialTheme.colorScheme.tertiary, RoundedCornerShape(8.dp))
+                    .height(200.dp) // Fixed height for the card
+                    .width(150.dp) // Fixed width for the card
+                    .clickable {
+                        onPinSelected(
+                                LatLng(
+                                        pin.latitude,
+                                        pin.longitude
+                                )
+                        )},
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary)
     ) {
         Column {
             AsyncImage(
-                model = pin.photoUrl,
-                contentDescription = pin.title,
-                modifier = Modifier
-                    .height(75.dp) // Fixed height for the image
-                    .fillMaxWidth(), // The image should fill the card width
-                contentScale = ContentScale.Crop // Crop the image if necessary to fill the bounds
+                    model = pin.photoUrl,
+                    contentDescription = pin.title,
+                    modifier = Modifier
+                            .height(49.dp) // Adjusted height for the image
+                            .fillMaxWidth(), // The image should fill the card width
+                    contentScale = ContentScale.Crop // Crop the image if necessary to fill the bounds
             )
             Column(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth() // Ensure the title has the maximum width it can use
+                    modifier = Modifier
+                            .padding(4.dp) // Reduced padding
+                            .fillMaxWidth() // Ensure the title has the maximum width it can use
+                            .height(40.dp) // Adjusted height for the text box
             ) {
                 Text(
-                    text = pin.title,
-                    maxLines = 2, // Allow two lines for the title if needed
-                    overflow = TextOverflow.Ellipsis, // Add ellipsis if the title is too long
+                        text = pin.title,
+                        maxLines = 2, // Allow two lines for the title if needed
+                        overflow = TextOverflow.Ellipsis, // Add ellipsis if the title is too long
                 )
                 // Description or other content can be added here
                 // If the description is long, consider adding maxLines and overflow here as well
@@ -64,5 +65,3 @@ fun PinCard(pin: MapPin, onPinSelected: (LatLng) -> Unit) {
         }
     }
 }
-
-
