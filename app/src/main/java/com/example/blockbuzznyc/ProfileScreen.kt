@@ -56,10 +56,11 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
     val userId = currentUser?.uid ?: ""
     var profilePictureUrl by remember { mutableStateOf<String?>(null) }
     var refreshToggle by remember { mutableStateOf(false) }
+    var showChangeUsernameDialog by remember { mutableStateOf(false) }
     val pins by getUserPins(userId).collectAsState(initial = emptyList())
     val context = LocalContext.current
 
-    //pick image from gallery for profile pic
+    // pick image from gallery for profile pic
     val imagePickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -140,18 +141,38 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                                 text = { Text("Change Name") },
                                 onClick = {
                                     expanded = false
-                                    // Implement your change name logic here
+                                    showChangeUsernameDialog = true
                                 }
                         )
                         DropdownMenuItem(
                                 text = { Text("Delete Account") },
                                 onClick = {
                                     expanded = false
-                                    // Implement your change description logic here
+                                    // Implement your delete account logic here
                                 }
                         )
                     }
                 }
+            }
+
+            if (showChangeUsernameDialog) {
+                ChangeUsernameDialog(
+                        currentUsername = user.username,
+                        onDismiss = { showChangeUsernameDialog = false },
+                        onConfirm = { newUsername ->
+                            updateUsername(
+                                    userId = userId,
+                                    newUsername = newUsername,
+                                    onSuccess = {
+                                        showChangeUsernameDialog = false
+                                        refreshToggle = !refreshToggle
+                                    },
+                                    onFailure = {
+                                        Log.d("ProfileScreen", "Failed to update username")
+                                    }
+                            )
+                        }
+                )
             }
 
             // Profile Picture Row
@@ -407,6 +428,56 @@ fun CountSection(count: Int, label: String) {
         )
     }
 }
+
+fun updateUsername(userId: String, newUsername: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
+    val userUpdates = mapOf("username" to newUsername)
+    FirebaseFirestore.getInstance().collection("users").document(userId).update(userUpdates)
+            .addOnSuccessListener {
+                onSuccess() // Notify that the username update was successful
+            }
+            .addOnFailureListener {
+                onFailure() // Handle any failure in updating the Firestore document
+            }
+}
+
+@Composable
+fun ChangeUsernameDialog(
+        currentUsername: String,
+        onDismiss: () -> Unit,
+        onConfirm: (String) -> Unit
+) {
+    var newUsername by remember { mutableStateOf(currentUsername) }
+
+    AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(text = "Change Username") },
+            text = {
+                Column {
+                    Text(text = "Enter a new username:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                            value = newUsername,
+                            onValueChange = { newUsername = it },
+                            label = { Text("Username") }
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    onConfirm(newUsername)
+                }) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                Button(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+    )
+}
+
+
 
 @Composable
 fun AchievementItem(achievement: Achievement, modifier: Modifier = Modifier) {
