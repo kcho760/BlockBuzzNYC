@@ -1,5 +1,3 @@
-// ProfileScreen.kt
-
 package com.example.blockbuzznyc
 
 import android.content.Context
@@ -10,18 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -29,20 +16,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,22 +32,22 @@ import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.example.blockbuzznyc.model.Achievement
 import com.example.blockbuzznyc.model.MapPin
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.storage
+import com.google.firebase.storage.ktx.storage
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 
 data class User(
-    val userId: String = "",
-    val username: String = "",
-    val profilePictureUrl: String? = null, // Nullable if you want to allow users without a profile picture
-    val numberOfPins: Int = 0,
-    val totalLikes: Int = 0,
-    val achievements: List<Achievement> = emptyList() // Add this line
+        val userId: String = "",
+        val username: String = "",
+        val profilePictureUrl: String? = null, // Nullable if you want to allow users without a profile picture
+        val numberOfPins: Int = 0,
+        val totalLikes: Int = 0,
+        val achievements: List<Achievement> = emptyList() // Add this line
 )
 
 @Composable
@@ -122,27 +98,61 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
 
     val user by userFlow.collectAsState(initial = User())
 
-    Surface(modifier = Modifier
-            .background(MaterialTheme.colorScheme.background)
-            .fillMaxSize()
+    Surface(
+            modifier = Modifier
+                    .background(MaterialTheme.colorScheme.background)
+                    .fillMaxSize()
     ) {
         Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(4.dp)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                    modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+            ) {
+                // Centered Username
+                Text(
+                        text = user.username,
+                        color = MaterialTheme.colorScheme.tertiary, // This sets the text color to your primary color
+                        style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = MaterialTheme.typography.titleLarge.fontSize * 1.25f,
+                        ),
+                        modifier = Modifier.align(Alignment.Center)
+                )
 
-            // Username
-            Text(
-                    text = user.username,
-                    color = MaterialTheme.colorScheme.tertiary, // This sets the text color to your primary color
-                    style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = MaterialTheme.typography.titleLarge.fontSize * 1.25f,
-                    )
-            )
+                // Gear icon on the right
+                var expanded by remember { mutableStateOf(false) }
+                Box(
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                ) {
+                    IconButton(onClick = { expanded = true }) {
+                        Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
+                    }
 
-//            Spacer(modifier = Modifier.height(16.dp))
+                    DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                    ) {
+                        DropdownMenuItem(
+                                text = { Text("Change Name") },
+                                onClick = {
+                                    expanded = false
+                                    // Implement your change name logic here
+                                }
+                        )
+                        DropdownMenuItem(
+                                text = { Text("Delete Account") },
+                                onClick = {
+                                    expanded = false
+                                    // Implement your change description logic here
+                                }
+                        )
+                    }
+                }
+            }
 
             // Profile Picture Row
             Row(
@@ -204,7 +214,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                 }
             }
 
-            //section for counts
+            // Section for counts
             Box(
                     modifier = Modifier
                             .fillMaxWidth()
@@ -323,80 +333,80 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
 fun uploadImageToFirebaseStorage(userId: String, imageUri: Uri, onComplete: (String) -> Unit) {
     val storageRef = Firebase.storage.reference.child("profile_pictures/$userId.jpg")
     storageRef.putFile(imageUri)
-        .addOnSuccessListener { taskSnapshot ->
-            taskSnapshot.metadata?.reference?.downloadUrl?.addOnSuccessListener { uri ->
-                onComplete(uri.toString())
+            .addOnSuccessListener { taskSnapshot ->
+                taskSnapshot.metadata?.reference?.downloadUrl?.addOnSuccessListener { uri ->
+                    onComplete(uri.toString())
+                }
             }
-        }
-        .addOnFailureListener {
-            // Handle any errors
-        }
+            .addOnFailureListener {
+                // Handle any errors
+            }
 }
+
 fun uploadProfilePicture(
-    userId: String,
-    imageUri: Uri,
-    context: Context, // Add this parameter
-    onSuccess: (String) -> Unit,
-    onFailure: () -> Unit
+        userId: String,
+        imageUri: Uri,
+        context: Context, // Add this parameter
+        onSuccess: (String) -> Unit,
+        onFailure: () -> Unit
 ) {
     val storageRef = Firebase.storage.reference.child("profile_pictures/$userId.jpg")
     storageRef.putFile(imageUri)
-        .addOnSuccessListener { taskSnapshot ->
-            taskSnapshot.metadata?.reference?.downloadUrl?.addOnSuccessListener { uri ->
-                onSuccess(uri.toString())
-                fetchUserAndCheckAchievements(userId, context)
-            }
-                ?.addOnFailureListener {
-                    // Could not get the download URL
-                    onFailure()
+            .addOnSuccessListener { taskSnapshot ->
+                taskSnapshot.metadata?.reference?.downloadUrl?.addOnSuccessListener { uri ->
+                    onSuccess(uri.toString())
+                    fetchUserAndCheckAchievements(userId, context)
                 }
-        }
-        .addOnFailureListener {
-            // Upload failed
-            onFailure()
-        }
+                        ?.addOnFailureListener {
+                            // Could not get the download URL
+                            onFailure()
+                        }
+            }
+            .addOnFailureListener {
+                // Upload failed
+                onFailure()
+            }
 }
 
 fun updateUserProfilePicture(userId: String, profilePictureUrl: String, onSuccess: () -> Unit) {
     val userUpdates = mapOf("profilePictureUrl" to profilePictureUrl)
     FirebaseFirestore.getInstance().collection("users").document(userId).update(userUpdates)
-        .addOnSuccessListener {
-            onSuccess() // Notify that the profile picture update was successful
-        }
-        .addOnFailureListener {
-            // Handle any failure in updating the Firestore document
-        }
+            .addOnSuccessListener {
+                onSuccess() // Notify that the profile picture update was successful
+            }
+            .addOnFailureListener {
+                // Handle any failure in updating the Firestore document
+            }
 }
 
 fun getUserPins(userId: String): Flow<List<MapPin>> = flow {
     val pins = FirebaseFirestore.getInstance().collection("pins")
-        .whereEqualTo("creatorUserId", userId)
-        .get()
-        .await()
-        .toObjects(MapPin::class.java)
+            .whereEqualTo("creatorUserId", userId)
+            .get()
+            .await()
+            .toObjects(MapPin::class.java)
     emit(pins)
 }
 
 @Composable
 fun CountSection(count: Int, label: String) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .padding(4.dp)
-            .clip(RoundedCornerShape(2.dp)) // To match your design
-            .background(MaterialTheme.colorScheme.tertiary) // Your themed surface color
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                    .padding(4.dp)
+                    .clip(RoundedCornerShape(2.dp)) // To match your design
+                    .background(MaterialTheme.colorScheme.tertiary) // Your themed surface color
     ) {
         Text(
-            text = count.toString(),
-            color = MaterialTheme.colorScheme.onTertiary // Ensure there is contrast
+                text = count.toString(),
+                color = MaterialTheme.colorScheme.onTertiary // Ensure there is contrast
         )
         Text(
-            text = label,
-            color = MaterialTheme.colorScheme.onTertiary // Ensure there is contrast
+                text = label,
+                color = MaterialTheme.colorScheme.onTertiary // Ensure there is contrast
         )
     }
 }
-
 
 @Composable
 fun AchievementItem(achievement: Achievement, modifier: Modifier = Modifier) {
