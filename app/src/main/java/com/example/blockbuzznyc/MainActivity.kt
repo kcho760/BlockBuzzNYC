@@ -304,18 +304,19 @@ fun MainScreen(
             }
 
             composable(
-                "profile",
-                enterTransition = { slideInFromLeft() },
-                exitTransition = { slideOutToRight()}
+                    "profile",
+                    enterTransition = { slideInFromLeft() },
+                    exitTransition = { slideOutToRight() }
             ) {
                 ProfileScreen(
-                    imageHandler = imageHandler,
-                    onPinSelected = { pin ->
-                        Log.d("PinTracking", "Navigating to map with pin: ${pin.id}")
-                        selectedMapPin.value = pin // Set the selected MapPin
-                        showPinInfoDialog.value = true
-                        navController.navigate("main")
-                    }
+                        imageHandler = imageHandler,
+                        onPinSelected = { pin ->
+                            Log.d("PinTracking", "Navigating to map with pin: ${pin.id}")
+                            selectedMapPin.value = pin // Set the selected MapPin
+                            showPinInfoDialog.value = true
+                            navController.navigate("main")
+                        },
+                        navController = navController // Add this line
                 )
             }
             composable(

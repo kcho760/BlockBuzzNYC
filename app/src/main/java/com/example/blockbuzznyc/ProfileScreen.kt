@@ -3,6 +3,7 @@ package com.example.blockbuzznyc
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -29,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.blockbuzznyc.model.Achievement
 import com.example.blockbuzznyc.model.MapPin
@@ -51,7 +53,7 @@ data class User(
 )
 
 @Composable
-fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
+fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit, navController: NavController) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     val userId = currentUser?.uid ?: ""
     var profilePictureUrl by remember { mutableStateOf<String?>(null) }
@@ -59,7 +61,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
     var showChangeUsernameDialog by remember { mutableStateOf(false) }
     val pins by getUserPins(userId).collectAsState(initial = emptyList())
     val context = LocalContext.current
-
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     // pick image from gallery for profile pic
     val imagePickerLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
@@ -148,7 +150,7 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                                 text = { Text("Delete Account") },
                                 onClick = {
                                     expanded = false
-                                    // Implement your delete account logic here
+                                    showDeleteConfirmDialog = true
                                 }
                         )
                     }
@@ -171,6 +173,27 @@ fun ProfileScreen(imageHandler: ImageHandler, onPinSelected: (MapPin) -> Unit) {
                                         Log.d("ProfileScreen", "Failed to update username")
                                     }
                             )
+                        }
+                )
+            }
+
+            if (showDeleteConfirmDialog) {
+                AlertDialog(
+                        onDismissRequest = { showDeleteConfirmDialog = false },
+                        title = { Text("Delete Account") },
+                        text = { Text("Are you sure you want to delete your account? This action cannot be undone.") },
+                        confirmButton = {
+                            Button(onClick = {
+                                deleteUserProfile(userId, navController, context) // Ensure you pass the context
+                                showDeleteConfirmDialog = false
+                            }) {
+                                Text("Confirm")
+                            }
+                        },
+                        dismissButton = {
+                            Button(onClick = { showDeleteConfirmDialog = false }) {
+                                Text("Cancel")
+                            }
                         }
                 )
             }
@@ -439,6 +462,40 @@ fun updateUsername(userId: String, newUsername: String, onSuccess: () -> Unit, o
                 onFailure() // Handle any failure in updating the Firestore document
             }
 }
+
+fun deleteUserProfile(userId: String, navController: NavController, context: Context) {
+    val userDocRef = FirebaseFirestore.getInstance().collection("users").document(userId)
+
+    // Start by deleting user's Firestore document
+    userDocRef.delete().addOnSuccessListener {
+        Log.d("DeleteUser", "Firestore document deleted successfully")
+
+        // Optionally delete profile picture from Firebase Storage
+        val storageRef = Firebase.storage.reference.child("profile_pictures/$userId.jpg")
+        storageRef.delete().addOnSuccessListener {
+            Log.d("DeleteUser", "Storage image deleted successfully")
+
+            // Finally, delete the Firebase Auth user
+            FirebaseAuth.getInstance().currentUser?.delete()?.addOnSuccessListener {
+                Log.d("DeleteUser", "Firebase Auth user deleted successfully")
+                FirebaseAuth.getInstance().signOut()
+                navController.navigate("login_screen_route") {
+                    popUpTo("profile") { inclusive = true }
+                }
+            }?.addOnFailureListener { e ->
+                Log.e("DeleteUser", "Failed to delete Firebase Auth user", e)
+                Toast.makeText(context, "Failed to delete user: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }.addOnFailureListener { e ->
+            Log.e("DeleteUser", "Failed to delete Storage image", e)
+            Toast.makeText(context, "Failed to delete image: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }.addOnFailureListener { e ->
+        Log.e("DeleteUser", "Failed to delete Firestore document", e)
+        Toast.makeText(context, "Failed to delete Firestore data: ${e.message}", Toast.LENGTH_LONG).show()
+    }
+}
+
 
 @Composable
 fun ChangeUsernameDialog(
